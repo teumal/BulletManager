@@ -243,6 +243,19 @@
         </td>
       </tr>
 
+
+      <tr class="tr">
+        <td style="padding:20px;">
+            <a href="#method7">GetBulletAll</a>
+        </td>
+        <td style="font-size: 22px">
+            현재 활성화된 모든 
+            <span class="kw2">Bullet</span>
+            들의 참조를 얻습니다.
+        </td>
+      </tr>
+
+
       <tr class="tr">
         <td style="padding:20px;">
             <a href="#method4">ForEach</a>
@@ -310,11 +323,33 @@
 
         <tr class="tr">
             <td style="padding:20px;">
-                <a href="#property3">bulletCount</a>
+                <a href="#property3">instanceCount</a>
             </td>
             <td style="font-size: 22px">
                <span class="kw2">BulletManager</span>
                에 의해 관리되고 있는 총알들의 갯수를 나타내는
+               <span class="kw1">int</span>.
+            </td>
+        </tr>
+
+        <tr class="tr">
+            <td style="padding:20px;">
+                <a href="#property4">bulletCount</a>
+            </td>
+            <td style="font-size: 22px">
+               현재 활성화된 <span class="kw2">Rigidbody2D</span>
+               부착되어 있지 않은 총알들의 갯수를 나타내는 
+               <span class="kw1">int</span>.
+            </td>
+        </tr>
+
+        <tr class="tr">
+            <td style="padding:20px;">
+                <a href="#property5">bodyCount</a>
+            </td>
+            <td style="font-size: 22px">
+               현재 활성화된 <span class="kw2">Rigidbody2D</span>
+               가 부착되어 있는 총알들의 갯수를 나타내는
                <span class="kw1">int</span>.
             </td>
         </tr>
@@ -1128,6 +1163,138 @@
     </table>
 
 
+
+    <br><br><br><br>
+
+    <h1 style="padding-left:30px" id="method7">BulletManager.GetBulletAll</h1>
+    <table>
+        <tr>
+            <td style="padding-left:40px;">
+               <div>
+                  <span class="kw1">public static 
+                    <span class="kw1">int</span>
+                  </span>
+                  GetBulletAll( 
+                    <span class="kw2">Bullet</span>[]
+                    result
+                  );
+               </div>
+            </td>
+            <td style="padding-left:20px; font-size:25px">(1)</td>
+        </tr>
+
+        <tr>
+            <td style="padding-left:40px;">
+               <div style="border-top:none">
+                  <span class="kw1">public static 
+                    <span class="kw1">int</span>
+                  </span>
+                  GetBulletAll( 
+                    <table>
+                        <tr>
+                            <td style="padding-left:40px"><span class="kw1">bool</span></td>
+                            <td>withRigidbody,</td>
+                        </tr>
+
+                        <tr>
+                            <td style="padding-left:40px"><span class="kw2">Bullet</span>[]</td>
+                            <td>result</td>
+                        </tr>
+                    </table>
+                  );
+               </div>
+            </td>
+            <td style="padding-left:20px; font-size:25px">(2)</td>
+        </tr>
+    </table>
+
+    <br>
+
+    <p style="padding-left:40px">
+       현재 활성화된 총알들의 목록을 <span class="code">result</span> 에 0 번째 인덱스부터 차례로 저장합니다.
+    </p>
+
+    <br>
+    <table style="padding-left:40px; font-size:20px"">
+      <tr>
+        <td >1)</td>
+        <td style="padding-left:10px">활성화된 모든 총알의 목록을 <span class="code">result</span>에 저장합니다.
+            <span class="code">result.Length</span>는 최소 <span class="code">bulletCount + bodyCount</span>와 같거나 커야 합니다.</td>
+      </tr>
+
+
+      <tr><td><br></td></tr>
+      <tr>
+        <td >2)</td>
+        <td style="padding-left:10px">
+            <span class="code">withRigidbody == true</span>
+            이면 활성화된 총알들 중 <span class="code">Rigidbody2D</span>
+            를 가진 총알들의 목록 만 <span class="code">result</span>
+            에 저장합니다. 
+        </td>
+      </tr>
+
+      <tr><td><br></td></tr>
+
+      <tr>
+        <td></td>
+        <td>
+            <span class="code">result.Length</span>는 최소 <span class="code">bodyCount</span>와 같거나 커야 합니다.
+            이외의 경우, <span class="code">Rigidbody2D</span>
+            가 없는 총알들만 <span class="code">result</span>에 저장하며,</td>
+      </tr>
+
+      <tr><td><br></td></tr>
+
+      <tr>
+        <td></td>
+        <td>
+            <span class="code">result.Length</span>는 최소 <span class="code">bulletCount</span>와 같거나 커야 합니다.
+      </tr>
+    </table>
+
+
+
+
+    <br>
+    <h1 style="padding-left:60px; border-bottom:none">Parameters</h1>
+    <table>
+        <tr style=" font-size:20px">
+            <td  style="padding-left:80px;">
+              result
+            </td>
+            <td>&nbsp;&nbsp; - &nbsp;&nbsp;</td>
+            <td>
+               결과를 담을
+               <span class="code">Bullet[]</span> 배열의 참조.
+            </td>
+        </tr>
+
+        <tr><td><br></td></tr>
+        <tr style=" font-size:20px">
+            <td  style="padding-left:80px;">
+              withRigidbody
+            </td>
+            <td>&nbsp;&nbsp; - &nbsp;&nbsp;</td>
+            <td>
+               <span class="code">result</span>
+               의 총알이 <span class="code">Rigidbody2D</span>
+               를 가지고 있어야 하는지 여부
+            </td>
+        </tr>
+    </table>
+
+
+    <h1 style="padding-left:60px; border-bottom:none">Return value</h1>
+    <table>
+        <tr><td style="padding-left:80px; font-size:20px">
+           <span class="code">result</span>
+           담긴 <span class="code">Bullet</span>
+           의 갯수
+        </td></tr>
+    </table>
+
+
     <br><br><br><br>
 
     <h1 style="padding-left:30px" id="method4">BulletManager.ForEach</h1>
@@ -1729,7 +1896,31 @@
 
 
     <br><br><br><br>
-    <h1 style="padding-left:30px" id="property3">BulletManager.bulletCount</h1>
+    <h1 style="padding-left:30px" id="property3">BulletManager.instanceCount</h1>
+    <table>
+        <tr>
+            <td style="padding-left:40px;">
+               <div>
+                  <span class="kw1">public static int</span>
+                  instanceCount {
+                    <span class="kw1">get</span>;
+                  }
+               </div>
+            </td>
+        </tr>
+    </table>
+
+    <br>
+    <h1 style="padding-left:60px; border-bottom:none">Property Value</h1>
+ 
+    <p style="padding-left:80px;">
+       현재 할당되어 있는 모든 <span class="code">bulletPrefab</span>
+       의 갯수.
+    </p>
+
+
+    <br><br><br><br>
+    <h1 style="padding-left:30px" id="property4">BulletManager.bulletCount</h1>
     <table>
         <tr>
             <td style="padding-left:40px;">
@@ -1747,8 +1938,32 @@
     <h1 style="padding-left:60px; border-bottom:none">Property Value</h1>
  
     <p style="padding-left:80px;">
-       현재 할당되어 있는 모든 <span class="code">bulletPrefab</span>
-       의 갯수.
+       현재 활성화되어 있으며, <span class="code">Rigidbody2D</span>
+       가 부착되어 있지 않는 일반 총알들의 갯수
+    </p>
+
+
+    <br><br><br><br>
+    <h1 style="padding-left:30px" id="property5">BulletManager.bodyCount</h1>
+    <table>
+        <tr>
+            <td style="padding-left:40px;">
+               <div>
+                  <span class="kw1">public static int</span>
+                  bodyCount {
+                    <span class="kw1">get</span>;
+                  }
+               </div>
+            </td>
+        </tr>
+    </table>
+
+    <br>
+    <h1 style="padding-left:60px; border-bottom:none">Property Value</h1>
+ 
+    <p style="padding-left:80px;">
+        현재 활성화되어 있으며, <span class="code">Rigidbody2D</span>
+        가 부착되어 있는 일반 총알들의 갯수
     </p>
 
 
