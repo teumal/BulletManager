@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -86,8 +87,8 @@ public sealed class BulletManager : MonoBehaviour {
             int           fillerId = --ptr.pool.activeNum;
              
             Bullet filler  = pool[fillerId]; // temp
-            pool[fillerId] = target;         // filler ¿Í target À» ½º¿Ò.
-            pool[targetId] = filler;         // target ÀÇ ÀÎ½ºÅÏ½º´Â ÀÌ ¹®Àå¿¡¼­ È¸¼öµÊ.
+            pool[fillerId] = target;         // filler ì™€ target ì„ ìŠ¤ì™‘.
+            pool[targetId] = filler;         // target ì˜ ì¸ìŠ¤í„´ìŠ¤ëŠ” ì´ ë¬¸ì¥ì—ì„œ íšŒìˆ˜ë¨.
 
             ref BulletPtr pfiller = ref mLookup0.lst[filler.GetBulletID()];
             pfiller.offset = targetId;
@@ -107,7 +108,7 @@ public sealed class BulletManager : MonoBehaviour {
             Bullet     newInst = clone.GetComponentInChildren<Bullet>();
 
 
-            // ¹è¿­ÀÇ ¿ë·®ÀÌ ºÎÁ·ÇÒ °æ¿ì..
+            // ë°°ì—´ì˜ ìš©ëŸ‰ì´ ë¶€ì¡±í•  ê²½ìš°..
             if (mBullets.instNum == capacity0) {
                 Bullet[] old = mBullets.lst;
                 mBullets.lst = new Bullet[capacity0 * 2];
@@ -138,7 +139,7 @@ public sealed class BulletManager : MonoBehaviour {
         if (mBodies.activeNum == mBodies.instNum) {
             int capacity = mBodies.lst.Length;
 
-            // ¹è¿­ÀÇ ¿ë·®ÀÌ ºÎÁ·ÇÒ °æ¿ì
+            // ë°°ì—´ì˜ ìš©ëŸ‰ì´ ë¶€ì¡±í•  ê²½ìš°
             if (mBodies.instNum == capacity) {
                 Bullet[] old = mBodies.lst;
                 mBodies.lst  = new Bullet[capacity * 2];
@@ -146,7 +147,7 @@ public sealed class BulletManager : MonoBehaviour {
             }
 
 
-            // ´Ù¸¥ Ç®¿¡¼­ ÀÎ½ºÅÏ½º¸¦ ²ø¾î´Ù ¾µ ¼ö ÀÖ´Â °æ¿ì
+            // ë‹¤ë¥¸ í’€ì—ì„œ ì¸ìŠ¤í„´ìŠ¤ë¥¼ ëŒì–´ë‹¤ ì“¸ ìˆ˜ ìˆëŠ” ê²½ìš°
             if (mBullets.activeNum < mBullets.instNum) {
                 Bullet      moved = mBullets.lst[--mBullets.instNum];
                 Rigidbody2D body  = moved.gameObject.AddComponent<Rigidbody2D>();
@@ -164,7 +165,7 @@ public sealed class BulletManager : MonoBehaviour {
                 Rigidbody2D body    = newInst.gameObject.AddComponent<Rigidbody2D>();
                 int       lookupCap = mLookup0.lst.Length;
 
-                // ¹è¿­ÀÇ ¿ë·®ÀÌ ºÎÁ·ÇÒ °æ¿ì
+                // ë°°ì—´ì˜ ìš©ëŸ‰ì´ ë¶€ì¡±í•  ê²½ìš°
                 if (mLookup0.cnt == lookupCap) {
                     BulletPtr[] old = mLookup0.lst;
                     mLookup0.lst    = new BulletPtr[lookupCap * 2];
@@ -194,13 +195,13 @@ public sealed class BulletManager : MonoBehaviour {
     // UpdateBullet() Method
     private void UpdateBullet(Bullet thisBullet, float deltaTime) {
 
-        if(thisBullet.gameObject.layer == mEffectLayer) {
-          thisBullet.animator.speed = 1f;
-          thisBullet.animator.Update(deltaTime);
-          thisBullet.animator.speed = 0f;
-        }
         if (thisBullet.gameObject.activeSelf) {
-
+ 
+            if(thisBullet.gameObject.layer == mEffectLayer) {
+                thisBullet.animator.speed = 1f;
+                thisBullet.animator.Update(deltaTime);
+                thisBullet.animator.speed = 0f;
+            }
             if (thisBullet.onUpdate == null) {
                 BehaveDefault(thisBullet, deltaTime);
                 return;
@@ -257,8 +258,8 @@ public sealed class BulletManager : MonoBehaviour {
             if (target.destroyAnim != null) {
                 string destroyAnim = target.destroyAnim;
 
-                target.onDestroy?.Invoke(target); // target ÀÇ ¼Ò¸êÀÚ¸¦ È£Ãâ ÈÄ, 
-                target.onUpdate         = null;   // ÀÌÆÑÆ® ¿ë ÃÑ¾Ë·Î ÀÎ½ºÅÏ½º¸¦ Àç»ç¿ëÇÑ´Ù.
+                target.onDestroy?.Invoke(target); // target ì˜ ì†Œë©¸ìë¥¼ í˜¸ì¶œ í›„, 
+                target.onUpdate         = null;   // ì´íŒ©íŠ¸ ìš© ì´ì•Œë¡œ ì¸ìŠ¤í„´ìŠ¤ë¥¼ ì¬ì‚¬ìš©í•œë‹¤.
                 target.onDestroy        = null;
                 target.onTrigger        = null;
                 target.destroyAnim      = null;
@@ -275,9 +276,9 @@ public sealed class BulletManager : MonoBehaviour {
                 Inst.mPendingKill.lst = new Bullet[capacity * 2];
                 old.CopyTo(Inst.mPendingKill.lst, 0);
             }
-            Inst.mPendingKill.lst[Inst.mPendingKill.cnt++] = target; // ÆÄ±« È®Á¤µÈ ÃÑ¾ËÀº `pendingKill` Å¥¿¡ ³Ö¾îÁØ´Ù.
-            target.transform.gameObject.SetActive(false);            // ºñÈ°¼ºÈ­½ÃÅ´À¸·Î½á, ÀÌÈÄ DestroyBullet ÀÇ ´ë»óÀÌ µÇÁö ¾Ê°Ô ÇÑ´Ù.
-            target.onDestroy?.Invoke(target);                        // ¼Ò¸êÀÚ È£Ãâ.
+            Inst.mPendingKill.lst[Inst.mPendingKill.cnt++] = target; // íŒŒê´´ í™•ì •ëœ ì´ì•Œì€ `pendingKill` íì— ë„£ì–´ì¤€ë‹¤.
+            target.transform.gameObject.SetActive(false);            // ë¹„í™œì„±í™”ì‹œí‚´ìœ¼ë¡œì¨, ì´í›„ DestroyBullet ì˜ ëŒ€ìƒì´ ë˜ì§€ ì•Šê²Œ í•œë‹¤.
+            target.onDestroy?.Invoke(target);                        // ì†Œë©¸ì í˜¸ì¶œ.
         }
     }
 
@@ -321,6 +322,23 @@ public sealed class BulletManager : MonoBehaviour {
         }
         return null;
     }
+
+
+    // GetBulletAll() Method (overload 1)
+    public static int GetBulletAll(Bullet[] result) {
+        Array.Copy(Inst.mBullets.lst, result, bulletCount);
+        Array.Copy(Inst.mBodies.lst, 0, result, bulletCount, bodyCount);
+        return bulletCount + bodyCount;
+    }
+
+
+    // GetBulletAll() Method (overload 2)
+    public static int GetBulletAll(bool withRigidbody, Bullet[] result) {
+        BulletPool pool = withRigidbody ? Inst.mBodies : Inst.mBullets;
+        Array.Copy(pool.lst, result, pool.activeNum);
+        return pool.activeNum;
+    }
+
 
 
     // ForEach() Method (overload 1)
@@ -401,8 +419,20 @@ public sealed class BulletManager : MonoBehaviour {
     }
 
 
+    // instanceCount getter
+    static public int instanceCount {
+        get { return Inst.mLookup0.cnt; }
+    }
+
+
     // bulletCount getter
     static public int bulletCount {
-        get { return Inst.mLookup0.cnt; }
+        get { return Inst.mBullets.activeNum;}
+    }
+
+
+    // bodyCount getter
+    static public int bodyCount {
+        get { return Inst.mBodies.activeNum; }
     }
 }
