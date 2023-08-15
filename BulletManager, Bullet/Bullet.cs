@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 
 [RequireComponent(typeof(Collider2D))]
@@ -59,7 +56,7 @@ public class Bullet : MonoBehaviour {
 
         collider           = GetComponent<Collider2D>();
         collider.isTrigger = true;
-        mBulletID          = BulletManager.bulletCount;
+        mBulletID          = BulletManager.instanceCount;
     }
 
 
@@ -70,7 +67,7 @@ public class Bullet : MonoBehaviour {
     // OnTriggerStay2D() Method
     public void OnTriggerStay2D(Collider2D collision) {
 
-        if (collision.gameObject.activeSelf == false) {
+        if (!collision.gameObject.activeSelf && collision.gameObject.layer == BulletManager.effectLayer) {
             return;
         }
         Bullet other = BulletManager.GetBullet(collision.gameObject);
@@ -102,4 +99,3 @@ public class Bullet : MonoBehaviour {
         return mBulletID;
     }
 }
-
