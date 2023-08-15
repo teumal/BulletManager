@@ -342,17 +342,11 @@ public sealed class BulletManager : MonoBehaviour {
 
         for(int i=0, cnt=Inst.mBullets.activeNum; i<cnt; ++i) {
             Bullet b = Inst.mBullets.lst[i];
-
-            if(b.gameObject.layer != Inst.mEffectLayer) {
-                result[ret++] = b;
-            }
+            if(b.gameObject.layer != Inst.mEffectLayer) result[ret++] = b;
         }
         for (int i = 0, cnt = Inst.mBodies.activeNum; i < cnt; ++i) {
             Bullet b = Inst.mBodies.lst[i];
-
-            if (b.gameObject.layer != Inst.mEffectLayer) {
-                result[ret++] = b;
-            }
+            if (b.gameObject.layer != Inst.mEffectLayer) result[ret++] = b;
         }
         return ret;
     }
@@ -365,10 +359,7 @@ public sealed class BulletManager : MonoBehaviour {
         
         for(int i=0, cnt = pool.activeNum; i<cnt; ++i) {
             Bullet b = pool.lst[i];
-
-            if(b.gameObject.layer != Inst.mEffectLayer) {
-                result[ret++] = b;
-            }
+            if(b.gameObject.layer != Inst.mEffectLayer) result[ret++] = b;
         }
         return ret;
     }
@@ -377,34 +368,25 @@ public sealed class BulletManager : MonoBehaviour {
 
     // ForEach() Method (overload 1)
     public static void ForEach(Bullet.Intelligence operation) {
-
+        
         for (int i = 0, cnt = Inst.mBullets.activeNum; i < cnt; ++i) {
             Bullet thisBullet = Inst.mBullets.lst[i];
-
-            if (thisBullet.gameObject.layer != Inst.mEffectLayer) {
-                operation(thisBullet);
-            }
+            if (thisBullet.gameObject.layer != Inst.mEffectLayer) operation(thisBullet);
         }
         for (int i = 0, cnt = Inst.mBodies.activeNum; i < cnt; ++i) {
             Bullet thisBullet = Inst.mBodies.lst[i];
-
-            if (thisBullet.gameObject.layer != Inst.mEffectLayer) {
-                operation(thisBullet);
-            }
+            if (thisBullet.gameObject.layer != Inst.mEffectLayer) operation(thisBullet);
         }
     }
 
 
     // ForEach() Method (overload 2) 
     public static void ForEach(bool withRigidbdoy, Bullet.Intelligence operation) {
-        BulletPool pool = withRigidbdoy ? Inst.mBodies : Inst.mBodies;
+        BulletPool pool = withRigidbdoy ? Inst.mBodies : Inst.mBullets;
 
         for (int i = 0, cnt = pool.activeNum; i < cnt; ++i) {
             Bullet thisBullet = pool.lst[i];
-
-            if (thisBullet.gameObject.layer != Inst.mEffectLayer)  {
-                operation(thisBullet);
-            }
+            if (thisBullet.gameObject.layer != Inst.mEffectLayer) operation(thisBullet);
         }
     }
 
