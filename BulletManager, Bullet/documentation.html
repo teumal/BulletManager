@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="kor">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1212,6 +1212,20 @@
 
     <p style="padding-left:40px">
        현재 활성화된 총알들의 목록을 <span class="code">result</span> 에 0 번째 인덱스부터 차례로 저장합니다.
+       활성화된 총알들 중에는 "이팩트 용" 이 있을 수 있으며, 
+    </p>
+
+    <p style="padding-left:40px">
+        "이팩트 용" 총알은 <span class="code">result</span>
+        에 담기지 않음에 유의하시길 바랍니다. "이팩트 용" 총알을 수정하는 것은 <b>undefined behaviour</b>
+        이기 때문입니다.
+    </p>
+
+    <p style="padding-left:40px">
+        결과를 저장할 <span class="code">result</span>는 충분한 크기를 가지고 있어야 하며, 할당할 크기는
+        <a href="#property4">bulletCount</a>,
+        <a href="#property5">bodyCount</a>
+        를 통해 알아낼 수 있습니다.
     </p>
 
     <br>
@@ -1963,7 +1977,7 @@
  
     <p style="padding-left:80px;">
         현재 활성화되어 있으며, <span class="code">Rigidbody2D</span>
-        가 부착되어 있는 일반 총알들의 갯수
+        가 부착되어 있는 총알들의 갯수
     </p>
 
 
