@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -196,11 +195,15 @@ public sealed class BulletManager : MonoBehaviour {
     private void UpdateBullet(Bullet thisBullet, float deltaTime) {
 
         if (thisBullet.gameObject.activeSelf) {
- 
-            if(thisBullet.gameObject.layer == mEffectLayer) {
+
+            if (thisBullet.gameObject.layer == mEffectLayer) {
                 thisBullet.animator.speed = 1f;
                 thisBullet.animator.Update(deltaTime);
                 thisBullet.animator.speed = 0f;
+
+                if(!thisBullet.gameObject.activeSelf) {
+                    return;
+                }
             }
             if (thisBullet.onUpdate == null) {
                 BehaveDefault(thisBullet, deltaTime);
@@ -326,17 +329,39 @@ public sealed class BulletManager : MonoBehaviour {
 
     // GetBulletAll() Method (overload 1)
     public static int GetBulletAll(Bullet[] result) {
-        Array.Copy(Inst.mBullets.lst, result, bulletCount);
-        Array.Copy(Inst.mBodies.lst, 0, result, bulletCount, bodyCount);
-        return bulletCount + bodyCount;
+        int ret = 0;
+
+        for(int i=0, cnt=Inst.mBullets.activeNum; i<cnt; ++i) {
+            Bullet b = Inst.mBullets.lst[i];
+
+            if(b.gameObject.activeSelf && b.gameObject.layer != Inst.mEffectLayer) {
+                result[ret++] = b;
+            }
+        }
+        for (int i = 0, cnt = Inst.mBodies.activeNum; i < cnt; ++i) {
+            Bullet b = Inst.mBodies.lst[i];
+
+            if (b.gameObject.activeSelf && b.gameObject.layer != Inst.mEffectLayer) {
+                result[ret++] = b;
+            }
+        }
+        return ret;
     }
 
 
     // GetBulletAll() Method (overload 2)
     public static int GetBulletAll(bool withRigidbody, Bullet[] result) {
         BulletPool pool = withRigidbody ? Inst.mBodies : Inst.mBullets;
-        Array.Copy(pool.lst, result, pool.activeNum);
-        return pool.activeNum;
+        int        ret  = 0;
+        
+        for(int i=0, cnt = pool.activeNum; i<cnt; ++i) {
+            Bullet b = pool.lst[i];
+
+            if(b.gameObject.activeSelf && b.gameObject.layer != Inst.mEffectLayer) {
+                result[ret++] = b;
+            }
+        }
+        return ret;
     }
 
 
