@@ -67,12 +67,12 @@ public class Bullet : MonoBehaviour {
     // OnTriggerStay2D() Method
     public void OnTriggerStay2D(Collider2D collision) {
 
-        if (!collision.gameObject.activeSelf) {
-            return;
+        if (gameObject.layer == BulletManager.effectLayer) { // when the layer of this gameObject which have `Bullet` is "Effect",
+            return;                                          // thisBullet is confirmed destruction or for effect.
         }
         Bullet other = BulletManager.GetBullet(collision.gameObject);
 
-        if (other != null && (triggerOrder < other.triggerOrder || other.gameObject.layer == BulletManager.effectLayer) ) {
+        if (other != null && triggerOrder < other.triggerOrder) {
             return;
         }
         if (onTrigger == null) {
