@@ -9,8 +9,8 @@ public sealed class BulletManager : MonoBehaviour {
         public int instNum   = 0;
     };
     private struct BulletPtr {
-        public BulletPool pool;
-        public int        offset;
+        public BulletPool pool;   // the addressing mode is [pool:offset].
+        public int        offset; 
     };
     private struct List<T> {
         public T[] lst;
@@ -23,16 +23,16 @@ public sealed class BulletManager : MonoBehaviour {
     //////////////////////
 
 
-    private static BulletManager Inst = null;
+    private static BulletManager Inst = null; // the single-ton instance
 
-    private BulletPool mBullets = new BulletPool();
-    private BulletPool mBodies  = new BulletPool();
+    private BulletPool mBullets = new BulletPool(); // the allocator to get a bullet with no `Rigidbody2D`.
+    private BulletPool mBodies  = new BulletPool(); // the allocator to get a bullet with `Rigidbody2D`.
 
-    private List<BulletPtr>            mLookup0 = new List<BulletPtr>();
-    private Dictionary<int, BulletPtr> mLookup1 = new Dictionary<int, BulletPtr>();
-    private List<Bullet>           mPendingKill = new List<Bullet>();
+    private List<BulletPtr>            mLookup0 = new List<BulletPtr>();            // get `BulletPtr` by the instance id of gameObject.
+    private Dictionary<int, BulletPtr> mLookup1 = new Dictionary<int, BulletPtr>(); // get `BulletPtr` by the bullet id.
+    private List<Bullet>           mPendingKill = new List<Bullet>();               // the pending queue for the bullets confirmed destruction.
 
-    private int mEffectLayer;
+    private int mEffectLayer; // the layer index for the effect bullet
 
     [Header("General Settings")]
     public GameObject _bulletPrefab = null;
@@ -66,7 +66,7 @@ public sealed class BulletManager : MonoBehaviour {
             if (mEffectLayer == -1) {
                 Debug.LogError("BulletManager could not find \"Effect\" Layer");
             }
-            Physics2D.SetLayerCollisionMask(mEffectLayer, 0);
+            Physics2D.SetLayerCollisionMask(mEffectLayer, 0); // the collider with "Effect" layer can't collide with any other collider.
             DontDestroyOnLoad(gameObject);
             return;
         }
@@ -86,11 +86,11 @@ public sealed class BulletManager : MonoBehaviour {
             int           fillerId = --ptr.pool.activeNum;
              
             Bullet filler  = pool[fillerId]; // temp
-            pool[fillerId] = target;         // filler 와 target 을 스왑.
-            pool[targetId] = filler;         // target 의 인스턴스는 이 문장에서 회수됨.
+            pool[fillerId] = target;         // swap `target` and `filler`
+            pool[targetId] = filler;         // the instance of `target` is returned to `BulletManager` 
 
             ref BulletPtr pfiller = ref mLookup0.lst[filler.GetBulletID()];
-            pfiller.offset = targetId;
+            pfiller.offset        = targetId;
             mLookup1[filler.gameObject.GetInstanceID()] = pfiller;
         }
         mPendingKill.cnt = 0;
@@ -106,22 +106,23 @@ public sealed class BulletManager : MonoBehaviour {
             GameObject clone   = Instantiate(_bulletPrefab);
             Bullet     newInst = clone.GetComponentInChildren<Bullet>();
 
-
-            // 배열의 용량이 부족할 경우..
+            // when the capacity of `mBullets` is insufficent..
             if (mBullets.instNum == capacity0) {
                 Bullet[] old = mBullets.lst;
                 mBullets.lst = new Bullet[capacity0 * 2];
                 old.CopyTo(mBullets.lst, 0);
             }
+
+            // when the capacity of `mLookup0` is insufficent..
             if (mLookup0.cnt == capacity1) {
                 BulletPtr[] old = mLookup0.lst;
                 mLookup0.lst    = new BulletPtr[capacity1 * 2];
                 old.CopyTo(mLookup0.lst, 0);
             }
-            mLookup0.lst[mLookup0.cnt++].pool = mBullets;
-            mLookup1.Add(newInst.gameObject.GetInstanceID(), default);
-            mBullets.lst[mBullets.instNum++] = newInst;
-            DontDestroyOnLoad(clone);
+            mLookup0.lst[mLookup0.cnt++].pool = mBullets;              // add `BulletPtr` to `mLookup0` for `newInst`
+            mLookup1.Add(newInst.gameObject.GetInstanceID(), default); // add `BulletPtr` to `mLookup1` for `newInst`
+            mBullets.lst[mBullets.instNum++] = newInst;                // assign `newInst` to `mBullets`
+            DontDestroyOnLoad(clone);                                  // `clone` is never destroyed.
         }
         Bullet newBullet  = mBullets.lst[mBullets.activeNum];
         int    bulletId   = newBullet.GetBulletID();
@@ -138,7 +139,7 @@ public sealed class BulletManager : MonoBehaviour {
         if (mBodies.activeNum == mBodies.instNum) {
             int capacity = mBodies.lst.Length;
 
-            // 배열의 용량이 부족할 경우
+            // when the capacity of `mBodies` is insufficent..
             if (mBodies.instNum == capacity) {
                 Bullet[] old = mBodies.lst;
                 mBodies.lst  = new Bullet[capacity * 2];
@@ -146,25 +147,25 @@ public sealed class BulletManager : MonoBehaviour {
             }
 
 
-            // 다른 풀에서 인스턴스를 끌어다 쓸 수 있는 경우
+            // when `mBullets` have any extra instance of `Bullet`.
             if (mBullets.activeNum < mBullets.instNum) {
-                Bullet      moved = mBullets.lst[--mBullets.instNum];
+                Bullet      moved = mBullets.lst[--mBullets.instNum];  // take away the instance in `mBullets`.
                 Rigidbody2D body  = moved.gameObject.AddComponent<Rigidbody2D>();
 
                 body.gravityScale = 0f;
-                body.sleepMode    = RigidbodySleepMode2D.NeverSleep;
+                body.sleepMode    = RigidbodySleepMode2D.NeverSleep; 
 
                 mLookup0.lst[moved.GetBulletID()].pool = mBodies;
                 mBodies.lst[mBodies.instNum++]         = moved;
             }
 
             else {
-                GameObject  clone   = Instantiate(_bulletPrefab);
+                GameObject  clone   = Instantiate(_bulletPrefab); 
                 Bullet      newInst = clone.GetComponentInChildren<Bullet>();
                 Rigidbody2D body    = newInst.gameObject.AddComponent<Rigidbody2D>();
                 int       lookupCap = mLookup0.lst.Length;
 
-                // 배열의 용량이 부족할 경우
+                // the capacity of `mLookup0` is insufficent..
                 if (mLookup0.cnt == lookupCap) {
                     BulletPtr[] old = mLookup0.lst;
                     mLookup0.lst    = new BulletPtr[lookupCap * 2];
@@ -174,15 +175,15 @@ public sealed class BulletManager : MonoBehaviour {
                 body.gravityScale = 0f;
                 body.sleepMode    = RigidbodySleepMode2D.NeverSleep;
 
-                mLookup0.lst[mLookup0.cnt++].pool = mBodies;
-                mLookup1.Add(newInst.gameObject.GetInstanceID(), default);
-                mBodies.lst[mBodies.instNum++] = newInst;
-                DontDestroyOnLoad(clone);
+                mLookup0.lst[mLookup0.cnt++].pool = mBodies;                // add `BulletPtr` to `mLookup`  for `newInst`
+                mLookup1.Add(newInst.gameObject.GetInstanceID(), default);  // add `BulletPtr` to `mLookup1` for `newInst
+                mBodies.lst[mBodies.instNum++] = newInst;                   // assign `newInst` to `mBodies`.
+                DontDestroyOnLoad(clone);                                   // the `clone` is never destroyed
             }
         }
-        Bullet newBullet = mBodies.lst[mBodies.activeNum];
-        int bulletId = newBullet.GetBulletID();
-        int instanceId = newBullet.gameObject.GetInstanceID();
+        Bullet newBullet  = mBodies.lst[mBodies.activeNum];
+        int    bulletId   = newBullet.GetBulletID();
+        int    instanceId = newBullet.gameObject.GetInstanceID();
 
         mLookup0.lst[bulletId].offset = mBodies.activeNum++;
         mLookup1[instanceId]          = mLookup0.lst[bulletId];
@@ -194,23 +195,29 @@ public sealed class BulletManager : MonoBehaviour {
     // UpdateBullet() Method
     private void UpdateBullet(Bullet thisBullet, float deltaTime) {
 
-        if (thisBullet.gameObject.activeSelf) {
+        if (thisBullet.transform.gameObject.activeSelf) { // update if only the root gameObject is activated
 
             if (thisBullet.gameObject.layer == mEffectLayer) {
                 thisBullet.animator.speed = 1f;
                 thisBullet.animator.Update(deltaTime);
                 thisBullet.animator.speed = 0f;
 
-                if(!thisBullet.gameObject.activeSelf) {
-                    return;
+                if(!thisBullet.transform.gameObject.activeSelf) { // when the `DestroyThisBullet` Animation Event is invoked,
+                    return;                                       // prevent the update in nextline
                 }
             }
             if (thisBullet.onUpdate == null) {
-                BehaveDefault(thisBullet, deltaTime);
+                BehaveDefault(thisBullet, deltaTime); // do the default behaviour
                 return;
             }
-            thisBullet.onUpdate(thisBullet);
+            thisBullet.onUpdate(thisBullet); // when it have a intelligence
         }
+    }
+
+
+    // IsValid() Method
+    private bool IsValid(Bullet b) {
+        return b.gameObject.layer != Inst.mEffectLayer;
     }
 
 
@@ -233,7 +240,7 @@ public sealed class BulletManager : MonoBehaviour {
         Bullet newBullet = withRigidbody ? Inst.AllocBullet2() : Inst.AllocBullet();
 
         newBullet.animator.speed = 1f;
-        newBullet.transform.gameObject.SetActive(true);
+        newBullet.transform.gameObject.SetActive(true); // activate the root gameObject of `newBullet`
         newBullet.animator.Play(updateAnim);
 
         newBullet.transform.localScale    = Vector3.one;
@@ -256,32 +263,34 @@ public sealed class BulletManager : MonoBehaviour {
 
     // DestroyBullet() Method
     public static void DestroyBullet(Bullet target) {
-        if (target.gameObject.activeSelf) {
+        if (target.transform.gameObject.activeSelf) { // checks if the root gameObject of `target` is activated..
 
             if (target.destroyAnim != null) {
                 string destroyAnim = target.destroyAnim;
 
-                target.onDestroy?.Invoke(target); // target 의 소멸자를 호출 후, 
-                target.onUpdate         = null;   // 이팩트 용 총알로 인스턴스를 재사용한다.
+                target.onDestroy?.Invoke(target); // call the destructor of `target`, 
+                target.onUpdate         = null;   // then recycles the instance of `target` immediately
                 target.onDestroy        = null;
                 target.onTrigger        = null;
                 target.destroyAnim      = null;
                 target.gameObject.layer = Inst.mEffectLayer;
-                target.speed            = 0f;
+                target.speed            = 0f;  // for `Animator.Update`.
                 target.animator.speed   = 0f;
                 target.animator.Play(destroyAnim);
                 return;
             }
             int capacity = Inst.mPendingKill.lst.Length;
 
+            // the capacity of `mPendingKill` is insufficent..
             if (Inst.mPendingKill.cnt == capacity) {
                 Bullet[] old          = Inst.mPendingKill.lst;
                 Inst.mPendingKill.lst = new Bullet[capacity * 2];
                 old.CopyTo(Inst.mPendingKill.lst, 0);
             }
-            Inst.mPendingKill.lst[Inst.mPendingKill.cnt++] = target; // 파괴 확정된 총알은 `pendingKill` 큐에 넣어준다.
-            target.transform.gameObject.SetActive(false);            // 비활성화시킴으로써, 이후 DestroyBullet 의 대상이 되지 않게 한다.
-            target.onDestroy?.Invoke(target);                        // 소멸자 호출.
+            Inst.mPendingKill.lst[Inst.mPendingKill.cnt++] = target; // the bullet confirmed destruction is queued to the pending queue, then
+            target.transform.gameObject.SetActive(false);            // the instance will be returned in `LateUpdate`.
+            target.gameObject.layer = Inst.mEffectLayer;             // for removing the number of branches in `ForEach`, `GetBulletAll`
+            target.onDestroy?.Invoke(target);                        // call the destructor of `target`.
         }
     }
 
@@ -300,7 +309,7 @@ public sealed class BulletManager : MonoBehaviour {
                 Bullet thisBullet = Inst.mBodies.lst[i];
                 DestroyBullet(thisBullet);
             }
-            Inst.LateUpdate();
+            Inst.LateUpdate(); // return their instances to `BulletManager`..
         }
     }
 
@@ -334,14 +343,14 @@ public sealed class BulletManager : MonoBehaviour {
         for(int i=0, cnt=Inst.mBullets.activeNum; i<cnt; ++i) {
             Bullet b = Inst.mBullets.lst[i];
 
-            if(b.gameObject.activeSelf && b.gameObject.layer != Inst.mEffectLayer) {
+            if(b.gameObject.layer != Inst.mEffectLayer) {
                 result[ret++] = b;
             }
         }
         for (int i = 0, cnt = Inst.mBodies.activeNum; i < cnt; ++i) {
             Bullet b = Inst.mBodies.lst[i];
 
-            if (b.gameObject.activeSelf && b.gameObject.layer != Inst.mEffectLayer) {
+            if (b.gameObject.layer != Inst.mEffectLayer) {
                 result[ret++] = b;
             }
         }
@@ -357,7 +366,7 @@ public sealed class BulletManager : MonoBehaviour {
         for(int i=0, cnt = pool.activeNum; i<cnt; ++i) {
             Bullet b = pool.lst[i];
 
-            if(b.gameObject.activeSelf && b.gameObject.layer != Inst.mEffectLayer) {
+            if(b.gameObject.layer != Inst.mEffectLayer) {
                 result[ret++] = b;
             }
         }
@@ -372,14 +381,14 @@ public sealed class BulletManager : MonoBehaviour {
         for (int i = 0, cnt = Inst.mBullets.activeNum; i < cnt; ++i) {
             Bullet thisBullet = Inst.mBullets.lst[i];
 
-            if (thisBullet.gameObject.activeSelf && thisBullet.gameObject.layer != Inst.mEffectLayer) {
+            if (thisBullet.gameObject.layer != Inst.mEffectLayer) {
                 operation(thisBullet);
             }
         }
         for (int i = 0, cnt = Inst.mBodies.activeNum; i < cnt; ++i) {
             Bullet thisBullet = Inst.mBodies.lst[i];
 
-            if (thisBullet.gameObject.activeSelf && thisBullet.gameObject.layer != Inst.mEffectLayer) {
+            if (thisBullet.gameObject.layer != Inst.mEffectLayer) {
                 operation(thisBullet);
             }
         }
@@ -393,7 +402,7 @@ public sealed class BulletManager : MonoBehaviour {
         for (int i = 0, cnt = pool.activeNum; i < cnt; ++i) {
             Bullet thisBullet = pool.lst[i];
 
-            if (thisBullet.gameObject.activeSelf && thisBullet.gameObject.layer != Inst.mEffectLayer) {
+            if (thisBullet.gameObject.layer != Inst.mEffectLayer)  {
                 operation(thisBullet);
             }
         }
