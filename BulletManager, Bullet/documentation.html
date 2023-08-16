@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="kor">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -463,6 +463,12 @@
         를 전달하면 됩니다. 그렇게 되면, 해당 함수는 풀링된 총알 인스턴스(instance) 중에서 
         <span class="code">Rigidbody2D</span>
         를 가진 총알을 활성화시키게 됩니다.
+    </p>
+
+    <p style="padding-left:40px;">
+        부착된 <span class="code">Rigidbody2D</span>
+        는 <span class="code">gravityScale = 0f; sleepMode = RigidbodySleepMode2D.NeverSleep;</span>
+        으로 자동 설정됩니다.
     </p>
 
     <br>
@@ -2072,6 +2078,14 @@
        <span class="code">CircleCollider2D</span>,
        <span class="code">CapsuleCollider2D</span>,
        등을 미리 부착해두어야 합니다.
+       또한, 총알의 프리팹에
+    </p>
+
+    <p>
+       <span class="code">Rigidbody2D</span>
+       를 미리 부착하지 마십시오. 해당 컴포넌트는 
+       <span class="code">BulletManager</span>
+       가 필요하다면, 알아서 부착시키기 때문입니다.
     </p>
 
     <br><br>
@@ -2281,6 +2295,18 @@
 
         <tr class="tr">
             <td style="padding:20px;">
+                <a href="#property 16">rigidbody</a>
+            </td>
+            <td style="font-size: 22px">
+                root <span class="kw2">GameObject</span>
+                에 부착되어 있는 
+                <span class="kw2">Rigidbody2D</span>
+                의 참조.
+            </td>
+        </tr>
+
+        <tr class="tr">
+            <td style="padding:20px;">
                 <a href="#property 11">triggerOrder</a>
             </td>
             <td style="font-size: 22px">
@@ -2330,6 +2356,101 @@
         <a href="#property 9">Bullet.lineRenderer</a>
         의 예제를 읽어보시길 바랍니다.
     </p>
+    <br>
+    <p style="padding-left:40px">
+        총알이 항상 하나의 물체와 부딪히라는 법은 없으며, 총알이 여러 물체와 동시에 부딪히는 경우가 있을 수 있습니다.
+        이 말은 총알의 입장에서
+    </p>
+
+    <p style="padding-left:40px">
+        총알의 <span class="code">Bullet.OnTriggerStay2D</span>
+        가 연속적으로 호출될 수 있음을 의미함에 주목하시길 바랍니다.
+        중간에 총알이 파괴되거나, "이팩트 용"
+    </p>
+
+    <p style="padding-left:40px">
+        총알이 되지 않는 한, 동시에 부딪힌 모든 물체에 대해서 <span class="code">OnTriggerStay2D</span>
+        가 호출됩니다:
+    </p>
+
+    <br>
+    <pre class="code">
+    <code>
+    private void Start() {
+        Bullet b0 = BulletManager.CreateBullet(
+            Vector2.zero, Vector2.right, default, "Default",default,default,default,default,true
+        );
+        Bullet b1 = BulletManager.CreateBullet(
+            Vector2.zero, Vector2.left, default, "Default", default,default,default,default,true
+        );
+        Bullet b2 = BulletManager.CreateBullet(
+            Vector2.zero, default,default,"Default", "sdf",default,default,default,true
+        );
+
+        b1.onTrigger = b0.onTrigger = b2.onTrigger = (b, c) => {
+            b.DestroyThisBullet();
+            Debug.Log($"bullet {b.GetBulletID()} is triggered");
+        };
+    }
+
+    // Possible Output:
+    //
+    // [08:49:16] bullet 1 is triggered
+    // [08:49:16] bullet 0 is triggered
+    // [08:49:16] bullet 2 is triggered
+    </code>
+    </pre>
+
+    <br>
+    <p style="padding-left:40px">
+       위 예제는 <span class="code">b0</span>
+       ,<span class="code">b1</span>
+       ,<span class="code">b2</span>
+       가 동시에 충돌하도록 총알을 생성했습니다. 다만, 각 총알들은 자신의 <span class="code">onTrigger</span>
+       에서 파괴되기 때문에
+    </p>
+    
+    <p style="padding-left:40px">
+       로그(log)가 한번만 출력됩니다. 반면, 총알들이 파괴되지 않는 경우, 모든 조합에 대한 로그(log)가 출력됨에 주목하시길 바랍니다.
+    </p>
+
+    <p style="padding-left:40px">
+       다음 코드는 코루틴(coroutine)을 사용하여, 물리(Physics) 단계의 <span class="code">OnTriggerXXX</span>
+       단계가 끝나면 모든 총알들을 삭제합니다:
+    </p>
+
+    <br>
+    <pre class="code">
+    <code>
+        private IEnumerator Start() {
+            Bullet b0 = BulletManager.CreateBullet(
+                Vector2.zero, default, default, "Default",default,default,default,default,true
+            );
+            Bullet b1 = BulletManager.CreateBullet(
+                Vector2.zero, default, default, "Default", default,default,default,default,true
+            );
+            Bullet b2 = BulletManager.CreateBullet(
+                Vector2.zero, default, default,"Default", default,default,default,default,true
+            );
+    
+            b1.onTrigger = b0.onTrigger = b2.onTrigger = (b, c) => {
+                Debug.Log($"bullet {b.GetBulletID()} is triggered");
+            };
+            yield return null; 
+            BulletManager.DestroyBulletAll();
+        }
+
+        // Possible Output:
+        //
+        // [08:55:06] bullet 1 is triggered
+        // [08:55:06] bullet 0 is triggered
+        // [08:55:06] bullet 2 is triggered
+        // [08:55:06] bullet 0 is triggered
+        // [08:55:06] bullet 2 is triggered
+        // [08:55:06] bullet 1 is triggered
+    </code>
+    </pre>
+
 
     <br>
     <p style="padding-left:40px">
@@ -4114,6 +4235,33 @@
        또한 <a href="#property 14">Bullet.transform</a>
        을 읽어보시길 바랍니다.
     </p>
+    <br>
+
+    <p style="padding-left:40px;">
+       <span class="code">Rigidbody2D</span>
+       를 부착한 총알이 <span class="code">Rigidbody2D.MovePosition</span>
+       등을 사용하여 움직이는 경우, 경로에 있는 물체를 통과하지 않도록 하고 싶을 수 있습니다.
+    </p>
+
+    <p style="padding-left:40px;">
+       이를 위해서는 <span class="code">collider.isTrigger = false;</span>
+       처럼 해줍니다. 또한, 이 상태에서도 총알과 부딪힐 수 있음에 주목해주시길 바랍니다. <span class="code">collider</span>
+    </p>
+
+    <p style="padding-left:40px;">
+       
+       속성은 다음과 같은 기본 세팅을 가집니다:
+    </p>
+
+    <ul>
+      <li><span class="code">isTrigger = true;</span></li>
+    </ul>
+
+    <br>
+    <p style="padding-left:40px;">
+       해당 속성을 사용한 총알은 <span class="code">onDestroy</span>
+       소멸자(destructor)를 통해서 기본 세팅으로 정리해주어야 합니다.
+    </p>
 
     <br>
     <h1 style="padding-left:60px; border-bottom:none">Property Value</h1>
@@ -4121,6 +4269,72 @@
     <p style="padding-left:80px;">
        총알에 부착된
        <span class="code">Collider2D</span>의 참조.
+    </p>
+
+
+    <br><br><br><br>
+    <h1 style="padding-left:30px" id="property 16">Bullet.rigidbody</h1>
+    <table>
+        <tr>
+            <td style="padding-left:40px;">
+               <div>
+                  <span class="kw1">public
+                    <span class="kw2">Rigidbody2D</span>
+                  </span>
+                  rigidbody;
+               </div>
+            </td>
+        </tr>
+    </table>
+
+    <p style="padding-left:40px;">
+        일반적으로 <span class="code">Bullet</span>
+        은 해당 컴포넌트를 가지고 있지 않는데, 이는 총알이 항상 총알과 충돌해야 하는 것은 아니기 때문입니다.
+    </p>
+
+    <p style="padding-left:40px;">
+        그렇기에 일반적으로 해당 속성의 값은 <span class="code">null</span>
+        입니다. 만약 총알이 다른 총알과 충돌할 수 있어야 하는 경우, 다시 말해 
+    </p>
+
+    <p style="padding-left:40px;">
+        <span class="code">Rigidbody2D</span>
+        를 가지고 있지 않은 물체와 충돌해야 한다면, <span class="code">BulletManager.CreateBullet</span>
+        를 호출할 때, <span class="code">withRigidbody = true</span>
+        
+    </p>
+
+    <p style="padding-left:40px;">
+        인자를 전달해주시길 바랍니다. 이렇게 생성된 인스턴스는 <span class="code">Bullet.rigidbody != null</span>
+        이 되게 됩니다. 해당 속성을 사용자가
+        
+    </p>
+
+    <p style="padding-left:40px;">
+        직접 세팅하는 것은 <b>undefined behaviour</b> 이며, 이렇게 부착된 <span class="code">Rigidbody2D</span>
+        의 기본값은 다음과 같습니다:
+    </p>
+
+    <ul>
+        <li><span class="code">gravityScale = 0f;</span></li>
+        <li><span class="code">sleepMode = RigidbodySleepMode2D.NeverSleep;</span></li>
+    </ul>
+
+    <br>
+    <p style="padding-left:40px">
+        해당 속성을 사용했다면, <span class="code">onDestroy</span>
+        소멸자(destructor)에서 위 기본 세팅처럼 정리를 해주어야 합니다.
+    </p>
+
+
+    <br>
+    <h1 style="padding-left:60px; border-bottom:none">Property Value</h1>
+ 
+    <p style="padding-left:80px;">
+       총알의 root <span class="code">GameObject</span>
+       에 부착되어 있는 
+       <span class="code">Rigidbody2D</span>
+       의 참조.
     </p>
 
 
