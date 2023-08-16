@@ -216,13 +216,6 @@ public sealed class BulletManager : MonoBehaviour {
         }
     }
 
-
-    // IsValid() Method
-    private bool IsValid(Bullet b) {
-        return b.gameObject.layer != Inst.mEffectLayer;
-    }
-
-
     ///////////////////////
     // Public Methods    //
     ///////////////////////
