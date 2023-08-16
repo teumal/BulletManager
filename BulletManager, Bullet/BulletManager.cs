@@ -150,10 +150,11 @@ public sealed class BulletManager : MonoBehaviour {
             // when `mBullets` have any extra instance of `Bullet`.
             if (mBullets.activeNum < mBullets.instNum) {
                 Bullet      moved = mBullets.lst[--mBullets.instNum];  // take away the instance in `mBullets`.
-                Rigidbody2D body  = moved.gameObject.AddComponent<Rigidbody2D>();
+                Rigidbody2D body  = moved.transform.gameObject.AddComponent<Rigidbody2D>();
 
                 body.gravityScale = 0f;
                 body.sleepMode    = RigidbodySleepMode2D.NeverSleep; 
+                moved.rigidbody   = body;
 
                 mLookup0.lst[moved.GetBulletID()].pool = mBodies;
                 mBodies.lst[mBodies.instNum++]         = moved;
@@ -162,7 +163,7 @@ public sealed class BulletManager : MonoBehaviour {
             else {
                 GameObject  clone   = Instantiate(_bulletPrefab); 
                 Bullet      newInst = clone.GetComponentInChildren<Bullet>();
-                Rigidbody2D body    = newInst.gameObject.AddComponent<Rigidbody2D>();
+                Rigidbody2D body    = newInst.transform.gameObject.AddComponent<Rigidbody2D>();
                 int       lookupCap = mLookup0.lst.Length;
 
                 // the capacity of `mLookup0` is insufficent..
@@ -174,6 +175,7 @@ public sealed class BulletManager : MonoBehaviour {
 
                 body.gravityScale = 0f;
                 body.sleepMode    = RigidbodySleepMode2D.NeverSleep;
+                newInst.rigidbody = body;
 
                 mLookup0.lst[mLookup0.cnt++].pool = mBodies;                // add `BulletPtr` to `mLookup`  for `newInst`
                 mLookup1.Add(newInst.gameObject.GetInstanceID(), default);  // add `BulletPtr` to `mLookup1` for `newInst
@@ -342,11 +344,17 @@ public sealed class BulletManager : MonoBehaviour {
 
         for(int i=0, cnt=Inst.mBullets.activeNum; i<cnt; ++i) {
             Bullet b = Inst.mBullets.lst[i];
-            if(b.gameObject.layer != Inst.mEffectLayer) result[ret++] = b;
+
+            if(b.gameObject.layer != Inst.mEffectLayer) {
+                result[ret++] = b;
+            }
         }
         for (int i = 0, cnt = Inst.mBodies.activeNum; i < cnt; ++i) {
             Bullet b = Inst.mBodies.lst[i];
-            if (b.gameObject.layer != Inst.mEffectLayer) result[ret++] = b;
+
+            if (b.gameObject.layer != Inst.mEffectLayer) {
+                result[ret++] = b;
+            }
         }
         return ret;
     }
@@ -359,7 +367,10 @@ public sealed class BulletManager : MonoBehaviour {
         
         for(int i=0, cnt = pool.activeNum; i<cnt; ++i) {
             Bullet b = pool.lst[i];
-            if(b.gameObject.layer != Inst.mEffectLayer) result[ret++] = b;
+
+            if(b.gameObject.layer != Inst.mEffectLayer) {
+                result[ret++] = b;
+            }
         }
         return ret;
     }
@@ -368,14 +379,20 @@ public sealed class BulletManager : MonoBehaviour {
 
     // ForEach() Method (overload 1)
     public static void ForEach(Bullet.Intelligence operation) {
-        
+
         for (int i = 0, cnt = Inst.mBullets.activeNum; i < cnt; ++i) {
             Bullet thisBullet = Inst.mBullets.lst[i];
-            if (thisBullet.gameObject.layer != Inst.mEffectLayer) operation(thisBullet);
+
+            if (thisBullet.gameObject.layer != Inst.mEffectLayer) {
+                operation(thisBullet);
+            }
         }
         for (int i = 0, cnt = Inst.mBodies.activeNum; i < cnt; ++i) {
             Bullet thisBullet = Inst.mBodies.lst[i];
-            if (thisBullet.gameObject.layer != Inst.mEffectLayer) operation(thisBullet);
+
+            if (thisBullet.gameObject.layer != Inst.mEffectLayer) {
+                operation(thisBullet);
+            }
         }
     }
 
@@ -386,7 +403,10 @@ public sealed class BulletManager : MonoBehaviour {
 
         for (int i = 0, cnt = pool.activeNum; i < cnt; ++i) {
             Bullet thisBullet = pool.lst[i];
-            if (thisBullet.gameObject.layer != Inst.mEffectLayer) operation(thisBullet);
+
+            if (thisBullet.gameObject.layer != Inst.mEffectLayer)  {
+                operation(thisBullet);
+            }
         }
     }
 
