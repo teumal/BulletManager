@@ -33,10 +33,11 @@ public class Bullet : MonoBehaviour {
     public Intelligence onDestroy;
     public RegisterSet  registers;
 
-    public Animator       animator       { get; private set; }
-    public SpriteRenderer spriteRenderer { get; private set; }  
-    public LineRenderer   lineRenderer   { get; private set; }
-    new public Collider2D collider       { get; private set; }
+    public Animator        animator       { get; private set; }
+    public SpriteRenderer  spriteRenderer { get; private set; }  
+    public LineRenderer    lineRenderer   { get; private set; }
+    new public Collider2D  collider       { get; private set; }
+    new public Rigidbody2D rigidbody;
 
     new public Transform transform { 
         get { return gameObject.transform.root; } 
