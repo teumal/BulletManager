@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -43,6 +44,17 @@ public sealed class BulletManager : MonoBehaviour {
     ///////////////////////
     // Private Methods   //
     ///////////////////////
+
+
+    // OnApplicationQuit() Method
+    private void OnApplicationQuit() {
+        if(Inst != null) {
+            InitState();
+            Destroy(Inst.gameObject);
+            Inst = null;
+        }
+    }
+
 
 
     // Awake() Method
@@ -215,6 +227,7 @@ public sealed class BulletManager : MonoBehaviour {
             thisBullet.onUpdate(thisBullet); // when it have a intelligence
         }
     }
+
 
     ///////////////////////
     // Public Methods    //
@@ -425,6 +438,26 @@ public sealed class BulletManager : MonoBehaviour {
         if (!Inst._bulletScope.Contains(newPos)) {
             DestroyBullet(thisBullet);
         }
+    }
+
+
+    // InitState() Method
+    public static void InitState() {
+        for(int i=0, cnt=Inst.mBullets.instNum; i<cnt; ++i) {
+            Destroy(Inst.mBullets.lst[i].transform.gameObject);
+        }
+        for(int i=0, cnt=Inst.mBodies.instNum; i<cnt; ++i) {
+            Destroy(Inst.mBodies.lst[i].transform.gameObject);
+        }
+        Array.Fill(Inst.mBullets.lst,     null, 0, Inst.mBullets.instNum);
+        Array.Fill(Inst.mBodies.lst,      null, 0, Inst.mBodies.instNum);
+        Array.Fill(Inst.mPendingKill.lst, null, 0, Inst.mPendingKill.cnt);
+
+        Inst.mBullets.instNum = Inst.mBullets.activeNum = 0;
+        Inst.mBodies.instNum  = Inst.mBodies.activeNum  = 0;
+        Inst.mPendingKill.cnt = 0;
+        Inst.mLookup0.cnt     = 0;
+        Inst.mLookup1.Clear();
     }
 
 
