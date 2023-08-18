@@ -282,7 +282,17 @@
             주어진 총알의 기본 동작을 수행합니다.
         </td>
       </tr>
-      
+
+      <tr class="tr">
+        <td style="padding:20px;">
+            <a href="#method8">InitState</a>
+        </td>
+        <td style="font-size: 22px">
+            생성된 모든 총알들의 인스턴스들을 해제하고, 
+            <span class="kw2">BulletManager</span>
+            의 상태를 초기화합니다.
+        </td>
+      </tr>
     </table>
 
 
@@ -1526,7 +1536,7 @@
             <td style="padding-left:40px;">
                <div>
                   <span class="kw1">public static</span>
-                  <span class="kw2">void</span>
+                  <span class="kw1">void</span>
                   BehaveDefault( <br>
                     <table>
                        <tr>
@@ -1677,11 +1687,76 @@
               }
         };
         </code>
-        </pre>
+    </pre>
 
         <img src="./image/BehaveDefault-result.gif" style="padding-left:60px;" width="1010px">
 
     <br><br><br><br>
+
+
+    <br><br><br><br>
+    <h1 style="padding-left:30px" id="method8">BulletManager.InitState</h1>
+    <table>
+        <tr>
+            <td style="padding-left:40px;">
+               <div>
+                  <span class="kw1">public static</span>
+                  <span class="kw1">void</span>
+                  InitState( );
+               </div>
+            </td>
+        </tr>
+    </table>
+
+    <p style="padding-left:40px">
+        지금까지 생성된 모든 <span class="code">bulletPrefab</span>
+        인스턴스들을 해제하고, <span class="code">BulletManager</span>
+        의 상태를 초기화합니다. <span class="code">BulletManager</span>
+        는 <span class="code">CreateBullet</span>
+    </p>
+
+    <p style="padding-left:40px">
+        으로 생성한 총알들의 인스턴스에 bullet id 를 부여합니다.
+        이 식별자는 항상 고유하며(always unique), 네트워크 환경에서 임의의 총알을 특정하는데
+    </p>
+
+    <p style="padding-left:40px">
+       사용될 수 있습니다. 하지만, 이는 <span class="code">BulletManager</span>
+       의 상태가 똑같다는 전제가 필요합니다. 이 말은 총알의 생성 및 삭제의 순서가 완벽하게 일치해야
+    </p>
+
+    <p style="padding-left:40px">
+       함을 의미합니다. 서버 측과 클라이언트 측의 <span class="code">BulletManager</span>
+       의 상태가 다른 경우, 서버에서는 <span class="code">1</span>
+       이라는 bullet id 를 가진 총알을
+    </p>
+
+    <p style="padding-left:40px">
+        클라이언트는 다른 총알로 해석하게 되니, 소통에 문제가 발생하게 됩니다.
+    </p>
+
+    <br>
+    <p style="padding-left:40px">
+       해당 함수를 호출하면, 앞으로 생성할 총알에 대해서 <span class="code">BulletManager</span>
+       는 처음부터 다시 bullet id 를 차례대로 부여합니다.
+    </p>
+
+    <br>
+    <h1 style="padding-left:60px; border-bottom:none">Parameters</h1>
+    <table>
+        <tr><td style="padding-left:80px; font-size:20px">
+            (none)
+        </td></tr>
+    </table>
+
+
+    <h1 style="padding-left:60px; border-bottom:none">Return value</h1>
+    <table>
+        <tr><td style="padding-left:80px; font-size:20px">
+            (none)
+        </td></tr>
+    </table>
+
 
 
     <br><br><br><br>
@@ -2341,7 +2416,7 @@
 
     <p style="padding-left:40px">
         총알이 물체와 부딪혔을 때 자동으로 호출되는 Event function 입니다. 
-        총알과 부딪힐 수 있는 객체는 반드시 <span class="code">Collider2D.isTrigger == true</span>
+        총알과 부딪히려면, 둘 중 하나는 <span class="code">Collider2D.isTrigger == true</span>
         인
     </p>
 
