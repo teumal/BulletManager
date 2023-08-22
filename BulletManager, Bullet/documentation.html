@@ -3880,7 +3880,7 @@
                        Vector2 pos1 = b.lineRenderer.GetPosition(1);
 
                        if(Vector2.Distance(pos0,pos1) >= 0.3f) {
-                          for(int i=b.lineRenderer.positionCount--; i>0; --i) {
+                          for(int i=b.lineRenderer.positionCount++; i>0; --i) {
                             b.lineRenderer.SetPosition(i, b.lineRenderer.GetPosition(i-1) );
                           }
                        }
