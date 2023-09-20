@@ -5,6 +5,7 @@ using UnityEngine;
 public class MobBase : MonoBehaviour {
 
     public class MobStat {
+        public Transform transform;
         /* implementation-defined */
     };
 
