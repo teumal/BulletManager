@@ -20,8 +20,8 @@ public class Bullet : MonoBehaviour {
     
     private int mBulletID;
 
-    [HideInInspector] public MobBase         shooter;
-    [HideInInspector] public MobBase         target;
+    [HideInInspector] public MobBase.MobStat shooter;
+    [HideInInspector] public MobBase.MobStat target;
     [HideInInspector] public MobBase.MobStat stat;
 
     [HideInInspector] public Vector2 lookAt;
@@ -30,14 +30,16 @@ public class Bullet : MonoBehaviour {
 
     public Intelligence onUpdate;
     public Intelligence onTrigger;
+    public Intelligence onCollision;
     public Intelligence onDestroy;
     public RegisterSet  registers;
 
-    public Animator        animator       { get; private set; }
-    public SpriteRenderer  spriteRenderer { get; private set; }  
-    public LineRenderer    lineRenderer   { get; private set; }
-    new public Collider2D  collider       { get; private set; }
-    new public Rigidbody2D rigidbody;
+    public     Animator        animator       { get; private set; }
+    public     SpriteRenderer  spriteRenderer { get; private set; }  
+    public     LineRenderer    lineRenderer   { get; private set; }
+    new public Collider2D      collider       { get; private set; }
+
+    [HideInInspector] new public Rigidbody2D rigidbody;
 
     new public Transform transform { 
         get { return gameObject.transform.root; } 
@@ -61,10 +63,19 @@ public class Bullet : MonoBehaviour {
     }
 
 
+    // OnCollisionEnter2D() Method
+    private void OnCollisionEnter2D(Collision2D collision) {
+        if (gameObject.layer == BulletManager.effectLayer) { // when the layer of this gameObject is "Effect",
+            return;                                          // thisBullet is confirmed destruction or for effect.
+        }
+        onCollision?.Invoke(this, collision.collider);
+    }
+
+
     //////////////////////////
     // Public Methods       //
     //////////////////////////
-    
+
     // OnTriggerStay2D() Method
     public void OnTriggerStay2D(Collider2D collision) {
 
@@ -100,3 +111,4 @@ public class Bullet : MonoBehaviour {
         return mBulletID;
     }
 }
+
