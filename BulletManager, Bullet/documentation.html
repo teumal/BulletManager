@@ -564,7 +564,7 @@
     <p style="padding-left:40px">
         <span class="code">onTrigger != null</span>
         인 총알은 더이상 부딪혀도 자동파괴 되지 않음에 주목하시길 바랍니다.
-        사용자는 직접 
+        이 경우, 사용자는 직접 
         <span class="code">DestroyBullet</span>
         또는 
         
@@ -573,9 +573,21 @@
     <p style="padding-left:40px">
         <span class="code">DestroyBulletAll</span>
         함수를 호출해서 해당 총알을 파괴해주어야 합니다.
-        또한 
-        <a href="#property 11">Bullet.triggerOrder</a>
-        도 읽어보시길 바랍니다.
+        해당 대리자는 충돌할 물체 중 최소 하나는 <span class="code">collider.isTrigger == true</span>
+        
+    </p>
+
+    <p style="padding-left:40px">
+        이어야지 호출됩니다. <span class="code">collider.isTrigger == false</span>
+        라면 대신 <span class="code">OnCollisionEnter2D</span>
+        에서 <span class="code">onCollision</span>
+        대리자가 호출됩니다.
+    </p>
+
+    <p style="padding-left:40px">
+        <span class="code">onCollision</span>
+        은 필수인자가 아닙니다. 자세한 내용은 <a href="#property 17">Bullet.onCollision</a>
+        을 읽어보시길 바랍니다.
     </p>
     <br>
 
@@ -850,25 +862,19 @@
     <p style="padding-left:40px">
         인자로 전달한 
         <span class="code">target</span>
-        을 파괴합니다. 파괴된 총알의 인스턴스는 
-        <span class="code">BulletManager</span>
-        가 자동으로 회수하며, 이후에 재사용될 수 있습니다.
-    </p>
-
-    <p style="padding-left:40px">
-        사용자는 총알을 파괴할 때, 절대로
+        을 파괴합니다. 사용자는 총알을 파괴할 때, 절대로
         <span class="code">Object.Destroy</span>
         함수를 사용해서는 안되며, 반드시 
         <span class="code">DestroyBullet</span>
-        또는 
-        <span class="code">DestroyBulletAll</span>
-        함수를 
     </p>
 
     <p style="padding-left:40px">
-        사용해야 합니다. 그러지 않을 경우, 결과는
+        또는 
+        <span class="code">DestroyBulletAll</span>
+        함수를 사용해야 합니다. 그러지 않을 경우, 결과는
         <b>undefined behaviour</b>
-        입니다.
+        입니다. 또한, 직접 <span class="code">SetActive</span>
+        를 호출하지 마십시오.
     </p>
 
     <br>
@@ -891,7 +897,7 @@
     <p style="padding-left:40px">
         정확히는 파괴된 
         <span class="code">target</span>
-        의 인스턴스가 "이팩트 용" 총알로서 재사용됩니다.
+        의 인스턴스가 "이팩트 용" 총알로서 즉시 재사용됩니다.
         그렇기에 파괴 이팩트의 
         <span class="code">Transform</span>
         은 
@@ -902,9 +908,21 @@
 
     <p style="padding-left:40px">
         <span class="code">target.transform</span>
-        을 그대로 사용하게 됩니다. 만약, 파괴 이팩트의 크기를 바꾸고 싶다면
+        을 그대로 사용하게 됩니다. 예를 들어, 파괴 이팩트의 크기를 바꾸고 싶다면
         <span class="code">target.onDestroy</span>
-        에서 수정하면 됩니다.
+        에서 <span class="code">target.transform</span>를 
+    </p>
+
+    <p style="padding-left:40px">
+        수정하면 된다는 의미입니다.
+        또한, <span class="code">destroyAnim</span>
+        으로 재사용된 총알은 지능을 가질 수 없음에 유의하시길 바랍니다. 자세한 내용은 
+        <a href="#property">Bullet.onDestroy</a>
+        
+    </p>
+
+    <p style="padding-left:40px">
+        를 참고하시길 바랍니다.
     </p>
 
     <br>
@@ -922,6 +940,17 @@
         반드시 애니메이션 클립(animation clip)의 끝에
         <span class="code">Bullet.DestroyThisBullet</span>
         을 호출하는 Animation Event 가 있어야 합니다.
+    </p>
+    <br>
+
+    <p style="padding-left:40px">
+        <span class="code">target.destroyAnim == null</span>
+        이라면, 총알은 파괴가 확정되며 <span class="code">BulletManager</span>
+        가 인스턴스를 회수합니다. 회수된 인스턴스는 가까운 <span class="code">CreateBullet</span>
+    </p>
+
+    <p style="padding-left:40px">
+        호출에서 높을 확률로 재사용됩니다. 
     </p>
 
     <br>
@@ -1504,6 +1533,7 @@
     <br>
     <p style="padding-left:40px;">
        해당 함수를 재귀 호출(recursive call)할 수는 있지만, 권장되지는 않습니다.
+       또한, 각 총알들의 업데이트 순서는 보장하지 않음에 유의하시길 바랍니다.
     </p>
 
     <br>
@@ -2174,7 +2204,7 @@
                 <a href="#method 2">OnTriggerStay2D</a>
             </td>
             <td style="font-size: 22px">
-                물체가 총알의 trigger collider 안에 들어왔을 때, 호출되는 Event function.
+                물체가 총알의 trigger collider 안에 들어온동안, 계속 호출되는 Event function.
             </td>
         </tr>
 
@@ -2218,7 +2248,7 @@
             </td>
             <td style="font-size: 22px">
                 총알을 쏜 몹을 나타내는
-                <span class="kw2">MobBase</span>.
+                <span class="kw2">MobBase.MobStat</span>.
             </td>
         </tr>
 
@@ -2228,7 +2258,7 @@
             </td>
             <td style="font-size: 22px">
                 총알의 타겟을 나타내는
-                <span class="kw2">MobBase</span>.
+                <span class="kw2">MobBase.MobStat</span>.
             </td>
         </tr>
 
@@ -2297,7 +2327,16 @@
                 <a href="#property 4">onTrigger</a>
             </td>
             <td style="font-size: 22px">
-                총알이 물체와 충돌했을 경우, 수행할 동작이 정의되어 있는 대리자(delegete).
+                총알이 trigger collider 를 사용하여 물체와 충돌했을 경우, 수행할 동작이 정의되어 있는 대리자(delegete).
+            </td>
+        </tr>
+
+        <tr class="tr">
+            <td style="padding:20px;">
+                <a href="#property 17">onCollision</a>
+            </td>
+            <td style="font-size: 22px">
+                총알이 물체와 충돌한 경우(makes contact with), 수행할 동작이 정의되어 있는 대리자(delegete).
             </td>
         </tr>
 
@@ -2631,7 +2670,6 @@
         </td></tr>
     </table>
 
-
     <br><br><br><br>
 
     <h1 style="padding-left:30px" id="method 0">Bullet.DestroyThisBullet</h1>
@@ -2796,7 +2834,7 @@
             <td style="padding-left:40px;">
                <div>
                   <span class="kw1">public
-                    <span class="kw2">MobBase</span>
+                    <span class="kw2">MobBase.MobStat</span>
                   </span>
                   shooter;
                </div>
@@ -2831,7 +2869,7 @@
             <td style="padding-left:40px;">
                <div>
                   <span class="kw1">public
-                    <span class="kw2">MobBase</span>
+                    <span class="kw2">MobBase.MobStat</span>
                   </span>
                   target;
                </div>
@@ -3178,12 +3216,6 @@
     </p>
 
     <p style="padding-left:40px">
-       또한, 총알이 <span class="code">Rigidbody2D</span>를 가지고 있더라도, <span class="code">OnCollisionStay2D</span>
-       이 아닌 항상 <span class="code">OnTriggerStay2D</span>
-       를 사용함에 유의하시길 바랍니다.
-    </p>
-
-    <p style="padding-left:40px">
        해당 속성의 값이 <span class="code">null</span>
        이면, 충돌 즉시 파괴되는 기본 동작(the default behaviour)을 수행합니다.
     </p>
@@ -3494,6 +3526,68 @@
         <span class="code">delegate void Intelligence(Bullet thisBullet, Collider2D collision);</span>
     </p>
 
+
+    <br><br><br><br>
+    <h1 style="padding-left:30px" id="property 17">Bullet.onCollision</h1>
+    <table>
+        <tr>
+            <td style="padding-left:40px;">
+               <div>
+                  <span class="kw1">public
+                    <span class="kw2">Intelligence</span>
+                  </span>
+                  onCollision;
+               </div>
+            </td>
+        </tr>
+    </table>
+
+    <p style="padding-left:40px">
+       <span class="code">Bullet.OnCollisionEnter2D</span>가 호출될 시점에서 호출되는 대리자(delegate)입니다.
+       해당 지능은 <span class="code">BulletManager.CreateBullet</span>의 
+    </p>
+
+    <p style="padding-left:40px">
+       필수 인자에 포함되지 않는데,
+       이는 총알의 <span class="code">collider.isTrigger</span>
+       속성을 수정하기 위해서는 <span class="code">BulletManager.CreateBullet</span>
+       이 반환한 참조를 통한
+    </p>
+
+    <p style="padding-left:40px">
+         추가 초기화(Extra Initialization)를 해주어야 하기 때문입니다. 그렇기에 해당 지능을 사용했다면,
+         <span class="code">onDestroy</span>
+         소멸자(destructor)에서 정리를 해주어야 합니다.
+    </p>
+
+    <br>
+    <p style="padding-left:40px">
+       해당 지능은 총알을 포함한, 충돌할 물체 모두 <span class="code">collider.isTrigger == false</span>
+       이어야지만 호출됩니다. 그럼에도 여전히 <span class="code">collider.isTrigger == true</span>
+       
+    </p>
+
+    <p style="padding-left:40px">
+        인 여타 총알들과 부딪히는게 가능하며, 여기서 서로의 <span class="code">onTrigger</span>
+        가 호출될 수 있음에 주목하시길 바랍니다. 물론, 이 경우 <a href="#property 11">triggerOrder</a>도 고려됩니다.
+
+    </p>
+    <br>
+
+    <p style="padding-left:40px">
+        <span class="code">onTrigger</span>
+        와 달리, <span class="code">onCollision</span>
+        에 해당하는 기본동작은 없습니다. 즉, <span class="code">onCollision == null</span>
+        이라면 <span class="code">OnCollisionEnter2D</span>
+        는 아무일도 하지 않고 종료됩니다.
+    </p>
+
+    <br>
+    <h1 style="padding-left:60px; border-bottom:none">Property Value</h1>
+  
+   <p style="padding-left:80px;">
+       <span class="code">delegate void Intelligence(Bullet thisBullet, Collider2D collision);</span>
+   </p>
 
     <br><br><br><br>
     <h1 style="padding-left:30px" id="property 5">Bullet.onDestroy</h1>
@@ -3880,7 +3974,7 @@
                        Vector2 pos1 = b.lineRenderer.GetPosition(1);
 
                        if(Vector2.Distance(pos0,pos1) >= 0.3f) {
-                          for(int i=b.lineRenderer.positionCount++; i>0; --i) {
+                          for(int i=b.lineRenderer.positionCount--; i>0; --i) {
                             b.lineRenderer.SetPosition(i, b.lineRenderer.GetPosition(i-1) );
                           }
                        }
