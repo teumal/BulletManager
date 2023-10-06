@@ -20,8 +20,8 @@ public class Bullet : MonoBehaviour {
     
     private int mBulletID;
 
-    [HideInInspector] public MobBase.MobStat shooter;
-    [HideInInspector] public MobBase.MobStat target;
+    [HideInInspector] public MobBase shooter;
+    [HideInInspector] public MobBase target;
     [HideInInspector] public MobBase.MobStat stat;
 
     [HideInInspector] public Vector2 lookAt;
