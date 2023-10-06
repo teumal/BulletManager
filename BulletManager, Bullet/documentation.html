@@ -39,6 +39,9 @@
         .kw4 {
             color:#d48e39;
         }
+        .kw5 {
+            color:red;
+        }
         .code {
             color:hsl(210, 8%, 15%);
             padding: 4px 6px;
@@ -578,7 +581,7 @@
     </p>
 
     <p style="padding-left:40px">
-        이어야지 호출됩니다. <span class="code">collider.isTrigger == false</span>
+        이어야지 호출됩니다. 두 물체 모두 <span class="code">collider.isTrigger == false</span>
         라면 대신 <span class="code">OnCollisionEnter2D</span>
         에서 <span class="code">onCollision</span>
         대리자가 호출됩니다.
@@ -916,13 +919,15 @@
     <p style="padding-left:40px">
         수정하면 된다는 의미입니다.
         또한, <span class="code">destroyAnim</span>
-        으로 재사용된 총알은 지능을 가질 수 없음에 유의하시길 바랍니다. 자세한 내용은 
-        <a href="#property">Bullet.onDestroy</a>
-        
+        으로 재사용된 총알은 지능을 가질 수 없음에 유의하시길 바랍니다. 
+        즉, <span class="code">target.onDestroy</span>
+        에서
     </p>
 
     <p style="padding-left:40px">
-        를 참고하시길 바랍니다.
+        새로운 지능과 이를 위한 소멸자(destructor)를 세팅하는 것은 <strong>undefined behaviour</strong>
+        입니다.
+        
     </p>
 
     <br>
@@ -950,7 +955,24 @@
     </p>
 
     <p style="padding-left:40px">
-        호출에서 높을 확률로 재사용됩니다. 
+        호출에서 높을 확률로 재사용됩니다. 일반적으로 <span class="code">DestroyBullet</span>
+        의 caller 는 
+        <span class="code">BulletManager.Update</span>, 
+        <span class="code">BulletManager.ForEach</span>,
+        <span class="code">Bullet.OnTriggerStay2D</span>
+        
+    </p>
+
+    <p style="padding-left:40px">
+        라고 생각할 수 있으며,
+        <span class="code">BulletManager</span>
+        는 회수된 총알의 인스턴스를 caller 의 호출이 모두 종료될 때까지, 재사용하지 않음을 보장합니다.
+        덕분의 <span class="code">target</span>을 참조하던
+    </p>
+
+    <p style="padding-left:40px">
+        다른 총알들이 <span class="code">target</span>
+        이 현재 파괴됨을 안전하게 확인할 수 있습니다. 
     </p>
 
     <br>
@@ -1262,7 +1284,7 @@
 
     <p style="padding-left:40px">
         "이팩트 용" 총알은 <span class="code">result</span>
-        에 담기지 않음에 유의하시길 바랍니다. "이팩트 용" 총알을 수정하는 것은 <b>undefined behaviour</b>
+        에 담기지 않음에 유의하시길 바랍니다. 외부에서 "이팩트 용" 총알을 수정하는 것은 <b>undefined behaviour</b>
         이기 때문입니다.
     </p>
 
@@ -2247,8 +2269,7 @@
                 <a href="#property 12">shooter</a>
             </td>
             <td style="font-size: 22px">
-                총알을 쏜 몹을 나타내는
-                <span class="kw2">MobBase.MobStat</span>.
+                총알을 쏜 몹을 가리키는 참조.
             </td>
         </tr>
 
@@ -2257,8 +2278,7 @@
                 <a href="#property 13">target</a>
             </td>
             <td style="font-size: 22px">
-                총알의 타겟을 나타내는
-                <span class="kw2">MobBase.MobStat</span>.
+                총알의 타겟을 가리키는 참조.
             </td>
         </tr>
 
@@ -2267,8 +2287,7 @@
                 <a href="#property 15">stat</a>
             </td>
             <td style="font-size: 22px">
-                체력(Hp), 공격력(Atk) 등.. 총알의 스탯(Stat)을 나타내는
-                <span class="kw2">MobBase.MobStat</span>.
+                체력(Hp), 공격력(Atk) 등.. 총알의 스탯(Stat).
             </td>
         </tr>
 
@@ -2833,9 +2852,8 @@
         <tr>
             <td style="padding-left:40px;">
                <div>
-                  <span class="kw1">public
-                    <span class="kw2">MobBase.MobStat</span>
-                  </span>
+                  <span class="kw1">public</span>
+                  <span class="kw5">/* see below */</span>
                   shooter;
                </div>
             </td>
@@ -2843,21 +2861,41 @@
     </table>
 
     <p style="padding-left:40px">
-       총알을 발사한 몹(Mob)의 참조. <span class="code">BulletManager.CreateBullet</span>
-       함수의 인자에 없는 것은, 해당 속성이 총알에 필수적인 요소가 아니기 때문입니다.
+       총알을 쏜 몹(Mob)의 참조입니다. 해당 속성은 <strong>implementation defined</strong>
+       이며, 사용자가 직접 정의하여 사용합니다. 예시로 해당 문서에서는 <span class="code">MobBase</span>
+       로 정의하여 사용했습니다.
     </p>
 
     <p style="padding-left:40px">
-       해당 속성을 수정했다면 총알의 <span class="code">onDestroy</span>
-       에서 <span class="code">shooter = null;</span>
-       로 정리를 해주어야 합니다. 
+       일반적으로 해당 속성은 <strong>총을 쏜 몹</strong>(shooter)의 좌표를 얻거나, 현재 체력 등을 확인하기 위한 스탯(stat)을
+       확인하는 용도로 사용됩니다. 그렇기에 해당 속성은 <a href="#property 15">Bullet.stat</a> 과 같은 타입 또는
+    </p>
+
+
+    <p style="padding-left:40px">
+       <span class="code">Bullet</span>
+       타입으로 정의하는 것을 추천합니다. 
+    </p>
+
+    <br>
+
+    <p style="padding-left:40px">
+       해당 속성은 상술한 이유로 인해 <span class="code">BulletManager.CreateBullet</span>
+       의 필수 인자가 아닙니다. 이는 총알이 파괴될 때, <span class="code">onDestroy</span>
+       소멸자에서 해당 속성을 정리해주어야함을 의미합니다. 
+    </p>
+
+    <p style="padding-left:40px">
+       또한, <a href="#property 13">Bullet.target</a> 또한 같은 타입으로 정의하는 것을 권장합니다. 해당 속성을 사용하는 좋은 예시로 <a href="#property 4">Bullet.onTrigger</a>
+       의 예제를 읽어보시길 바랍니다.
     </p>
 
     <br>
      <h1 style="padding-left:60px; border-bottom:none">Property Value</h1>
   
      <p style="padding-left:80px;">
-        총알을 발사한 몹 <span class="code">MobBase</span>의 참조
+        총알을 발사한 몹의 참조이며, 이 문서와 함께 제공되는 기본 타입은 <span class="code">MobBase</span>
+        입니다.
      </p>
 
 
@@ -2868,9 +2906,8 @@
         <tr>
             <td style="padding-left:40px;">
                <div>
-                  <span class="kw1">public
-                    <span class="kw2">MobBase.MobStat</span>
-                  </span>
+                  <span class="kw1">public</span>
+                  <span class="kw5">/* see below */</span>
                   target;
                </div>
             </td>
@@ -2878,26 +2915,42 @@
     </table>
 
     <p style="padding-left:40px">
-        총알이 목표로 하는 몹(Mob)의 참조. <span class="code">BulletManager.CreateBullet</span>
-        함수의 인자에 없는 것은, 해당 속성이 총알에 필수적인 요소가 아니기 때문입니다.
+        총알이 목표로 하는 몹(Mob)의 참조입니다. 해당 속성은 <strong>implementation defined</strong>
+        이며, 사용자가 직접 정의하여 사용합니다. 예시로 해당 문서에서는 <span class="code">MobBase</span>
+        로 정의하여 사용했습니다.
      </p>
  
      <p style="padding-left:40px">
-        해당 속성을 수정했다면 총알의 <span class="code">onDestroy</span>
-        에서 <span class="code">target = null;</span>
-        로 정리를 해주어야 합니다. 해당 속성은 총알의 타겟의 위치(position) 값이
+        일반적으로 해당 속성은 <strong>타겟</strong>(target)의 좌표를 얻거나, 현재 체력 등을 확인하기 위한 스탯(stat)을
+        확인하는 용도로 사용됩니다. 그렇기에 해당 속성은 <a href="#property 15">Bullet.stat</a> 과 같은 타입 또는
      </p>
-
+ 
+ 
      <p style="padding-left:40px">
-        필요할 때 유용합니다. 
+        <span class="code">Bullet</span>
+        타입으로 정의하는 것을 추천합니다. 
      </p>
  
      <br>
-      <h1 style="padding-left:60px; border-bottom:none">Property Value</h1>
-   
-      <p style="padding-left:80px;">
-         총알이 목표로 하는 몹 <span class="code">MobBase</span>의 참조
-      </p>
+ 
+     <p style="padding-left:40px">
+        해당 속성은 상술한 이유로 인해 <span class="code">BulletManager.CreateBullet</span>
+        의 필수 인자가 아닙니다. 이는 총알이 파괴될 때, <span class="code">onDestroy</span>
+        소멸자에서 해당 속성을 정리해주어야함을 의미합니다. 
+     </p>
+ 
+     <p style="padding-left:40px">
+        <a href="#property 12">Bullet.shooter</a> 또한 같은 타입으로 정의하는 것을 권장합니다. 해당 속성을 사용하는 좋은 예시로 <a href="#property 4">Bullet.onTrigger</a>
+        의 예제를 읽어보시길 바랍니다.
+     </p>
+
+     <br>
+     <h1 style="padding-left:60px; border-bottom:none">Property Value</h1>
+  
+     <p style="padding-left:80px;">
+        총알을 발사한 몹의 참조이며, 이 문서와 함께 제공되는 기본 타입은 <span class="code">MobBase</span>
+        입니다.
+     </p>
 
 
     <br><br><br><br>
@@ -2906,9 +2959,8 @@
         <tr>
             <td style="padding-left:40px;">
                <div>
-                  <span class="kw1">public
-                    <span class="kw2">MobBase.MobStat</span>
-                  </span>
+                  <span class="kw1">public</span>
+                  <span class="kw5">/* see below */</span>
                   stat;
                </div>
             </td>
@@ -2916,39 +2968,203 @@
     </table>
 
     <p style="padding-left:40px">
-       일반적으로 몹(Mob)은 체력(Hp), 공격력(Attack) 등의 스탯(Stat)을 가지고 있습니다.
-       그렇기에 총알이 적과 충돌하게 되면, 적은 총알의 <span class="code">shooter</span>
-      
+       본 문서에서 <strong>"총알"</strong> 이라는 단어는 단순히 발사체(projectile)로서 사용되는 의미가 아닙니다.
+       <span class="code">Bullet</span>은 지능을 가진 특별한 총알을 떠나 플레이어(player), 적(enemy) 또한
     </p>
 
     <p style="padding-left:40px">
-        를 통해 자신이 입을 피해량을 계산하는게 가능합니다. 하지만 이와 별개로
-        총알이 별도의 체력(Hp)을 가지고 있어야할 경우도 존재할 것입니다.
+       될 수 있기 때문입니다. 단순히 체력(Health point)을 가진 총알이라면, <a href="#property 6">Bullet.registers</a>에서
+       <span class="code">float</span>
+       타입의 레지스터를 하나 할당하여 사용하면 되지만, 게임에서 몹(Mob)들은
     </p>
 
     <p style="padding-left:40px">
-        예를 들어, 총알에 지능을 주고 잡몹처럼 행동하게 하는 경우가 있으며,
-        다음과 같이 모든 몹들이 공통적으로 가져야할 <span class="code">MobBase.MobStat</span>
-        을 할당합니다:
+       공격력(attack), 현재 체력(curHp), 최대 체력(maxHp) 등등의 공통된 스탯(stat)을 가지고 있으며,
+       데미지를 계산하거나, 이동을 하는 공통적인 기능을 수행해야 할 수 있습니다.
+    </p>
+
+    <p style="padding-left:40px">
+       사용자는 이런 모든 몹들이 공통적으로 가지는 기능(properties and methods)들을 정의한 클래스를
+       <span class="code">Bullet.stat</span>에다가 할당해줄 수 있습니다:
     </p>
 
     <br>
-    <pre class="code" style="height:200px">
+    <p style="padding-left:60px; text-decoration:underline;">
+       MobStat.cs:
+    </p>
+
+    <pre class="code" style="height:500px">
     <code>
-        private void CreateMob(Vector2 position, Vector2 lookAt, float speed) {
-            Bullet newMob = BulletManager.CreateBullet(
-                position, lookAt, speed, "Bat", "BatDead", null, null, null, true
-            );
-            if(newMob.stat==null) {
-                newMob.stat = new MobBase.MobStat(/* implementation defined */);
-            }
-            newMob.onUpdate = (b,c)=>{ /* do something.. */ };
-            newMob.onTrigger = (b,c)=>{ /* do something.. */ };
-            newMob.onDestroy = (b,c)=>{ b.stat = null; };
-        }
+        public class MobStat {
+           public static Material spriteDefault;
+           public Bullet thisBullet;  
+
+           public float curHp;
+           public float maxHp;
+
+           public float critical;
+           public float attack;
+           public float attackDelay;
+           public float delayTimer;
+
+           public float bulletSpeed;
+           public float bulletSize;
+           public int   bulletCount;
+
+           public float   speed;
+           public Vector2 knockback;
+           public Vector2 velocity;
+
+           public Material hitEffect;
+           public float    hitEffectTimer;
+
+           // GetDamage() Method
+           public void GetDamage(MobStat other) {
+              float critical = Random.Range(0f, 1f) &lt; other.critical ? 1.5f : 1f;
+              curHp -= other.attack * critical;
+
+              if(hitEffectTimer &lt;= 0f && hitEffect != null) {
+                hitEffectTimer                     = 1f;
+                thisBullet.spriteRenderer.material = hitEffect;
+              }
+           }
+
+           // Update() Method
+           public void Update() {
+              if(hitEffectTimer > 0f && (hitEffectTimer += Time.fixedDeltaTime) > 1.2f) {
+                hitEffectTimer                     = 0f;
+                thisBullet.spriteRenderer.material = spriteDefault;
+              }
+              thisBullet.rigidbody.MovePosition(
+                thisBullet.rigidbody.position + velocity + knockback;
+              );
+              knockback *= 0.9f;
+              velocity   = Vector2.zero;
+           }
+        };
     </code>
     </pre>
+
     <br>
+    <p style="padding-left:60px; text-decoration:underline;">
+       Main.cs:
+    </p>
+
+    <pre class="code" style="height:500px">
+    <code>
+       class Main : MonoBehaviour {
+
+           /////////////////////
+           // Properties      //
+           /////////////////////
+
+           [SerializedField] private Material hitEffect;
+
+           public static readonly Bullet.Intelligence onTriggerBullet = (b,c)=>{
+              Bullet hit = BulletManager.GetBullet(c.gameObject);
+
+              if(hit != null) {
+                b.DestroyThisBullet();
+                hit.stat?.GetDamage(b.shooter.stat);
+              }
+              b.DestroyThisBullet();
+           }; 
+
+           public static readonly Bullet.Intelligence doNothing = (b,c)=>{};
+
+           public static readonly Bullet.Intelligence mobDestructor = (b,c)=>{
+              b.stat = null;
+           };
+
+
+           ////////////////////
+           // Public Methods //
+           ////////////////////
+
+           // CreateBullet() Method
+           public static void CreateMobBullet(Bullet shooter) {
+              Bullet newBullet = BulletManager.CreateBullet(
+                shooter.rigidbody.position, 
+                shooter.lookAt, 
+                shooter.stat.bulletSpeed,
+                "MobBullet",
+                "Explosion"
+              );
+              newBullet.gameObject.layer      = LayerMask.NameToLayer("EnemyBullet");
+              newBullet.shooter               = shooter.stat;
+              newBullet.transform.localScale *= shooter.stat.bulletSize;
+              newBullet.onTrigger             = onTriggerBullet;
+           }
+
+           // CreateMob() Method
+           public static Bullet CreateMob(Vector2 position, Vector2 lookAt) {
+              Bullet mob = BulletManager.CreateBullet(
+                position, lookAt, default, "MobMove", "MobDead", null, null, null, true
+              );
+              if(mob.stat == null) {
+                mob.stat = new MobStat(); // Bullet.stat's type is `MobStat`
+              }
+
+              // `MobStat` initialization
+              mob.stat.thisBullet     = mob;
+              mob.stat.curHp          = 10f;
+              mob.stat.maxHp          = 10f;
+              mob.stat.critical       = 0f;
+              mob.stat.attack         = 1f;
+              mob.stat.attackDelay    = 2f;
+              mob.stat.delayTimer     = 0f;
+              mob.stat.bulletSpeed    = 5f;
+              mob.stat.bulletSize     = 1f;
+              mob.stat.speed          = 1f;
+              mob.stat.knockback      = 0f;
+              mob.stat.velocity       = Vector2.zero;
+              mob.stat.hitEffect      = hitEffect;
+              mob.stat.hitEffectTimer = 0f;
+
+
+              // `Bullet` initialization
+              mob.collider.isTrigger               = false; // to use `OnCollisionEnter2D`
+              mob.rigidbody.mass                   = 3f;
+              mob.rigidbody.freezeRotation         = true;
+              mob.rigidbody.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+              mob.gameObject.layer                 = LayerMask.NameToLayer("Enemy");
+
+              mob.onUpdate = (b,c)=>{
+                float deltaTime = Time.fixedDeltaTime;
+
+                if(b.stat.curHp &lt;= 0f || !BulletManager.bulletScope.Contains(b.rigidbody.position)) {
+                    b.DestroyThisBullet();
+                    return;
+                }
+                if((b.stat.delayTimer += deltaTime) > b.stat.attackDelay) {
+                    b.stat.delayTimer -= b.stat.attackDelay;
+                    CreateMobBullet(b);
+                }
+                b.stat.velocity = b.lookAt * (b.stat.speed * deltaTime);
+                b.stat.Update();
+              };
+              mob.onTrigger = doNothing;
+              mob.onDestroy = mobDestructor;
+           }
+       };
+    </code>
+    </pre>
+
+    <br>
+    <p style="padding-left:40px">
+        위 예제는 <span class="code">Bullet</span>
+        스크립트에서 <span class="code">stat</span>
+        의 타입을 <span class="code">MobStat</span>
+        으로 해주었습니다. 해당 문서의 예제들은 <span class="code">MobBase.MobStat</span>
+        으로 정의하여 사용하였다고 가정했습니다.
+    </p>
+
+    <p style="padding-left:40px">
+        <span class="code">stat</span>
+        은 <span class="code">struct</span>가 아닌, 항상 <span class="code">class</span>
+        로 정의해주는 것을 권장합니다. 모든 총알이 해당 속성을 사용하는 것은 아니기 때문입니다.
+    </p>
+
     <p style="padding-left:40px">
         <span class="code">stat</span>
         속성은 자동으로 할당되지 않으며, 위 예제처럼 사용자가 직접 할당해주어야 합니다. 또한,
@@ -2958,7 +3174,7 @@
 
     <p style="padding-left:40px">
         반드시 정리해줄 필요는 없습니다. 이는 <span class="code">MobBase</span>,
-        <span class="code">MobBase.MobStat</span>
+        <span class="code">Bullet.stat</span>
         의 정의가 "Implementation defined" 이기 때문입니다. 즉, 사용자가 알아서 구현
     </p>
 
@@ -2967,12 +3183,13 @@
         할당했던 <span class="code">MobBase.MobStat</span>
         인스턴스는 재활용하는 것을 추천합니다.
     </p>
-
     <br>
       <h1 style="padding-left:60px; border-bottom:none">Property Value</h1>
    
       <p style="padding-left:80px;">
-         총알의 스탯에 대한 정보가 담긴 <span class="code">MobBase.MobStat</span>의 참조
+         총알의 스탯에 대한 정보가 담긴 사용자 정의 클래스의 참조. 이 문서와 함께 제공되는 기본 타입은
+         <span class="code">MobBase.MobStat</span>
+         입니다.
       </p>
 
 
@@ -4048,29 +4265,29 @@
         에 부착된 <span class="code">Animator</span>
         의 참조입니다.
 
-        "이팩트 용" 총알의 <span class="code">Animator.speed</span>
+        <span class="code">destroyAnim</span> 에 해당하는 총알의 <span class="code">Animator.speed</span>
         속성은 사용할 수 없다는 점 유의하시길 바랍니다.
     </p>
 
     <p style="padding-left:40px;">
         이는 <span class="code">BulletManager</span>
-        가 "이팩트 용" 총알의 Animation Event 가 결정론적이게 일어날 수 있도록
+        가 그 총알의 Animation Event 가 결정론적이게 일어날 수 있도록
         직접 <span class="code">Animator.Update</span>
         를 호출해주기 때문입니다.
     </p>
 
     <p style="padding-left:40px;">
-        "이팩트 용" 총알의 애니메이션은 <span class="code">BulletManager.Update</span>
+        <span class="code">destroyAnim</span> 총알의 애니메이션은 <span class="code">BulletManager.Update</span>
         의 <span class="code">deltaTime</span>
-        인자만큼 진행되며, 그렇기에 직접 "이팩트 용" 총알을 생성할 때에는
+        인자만큼 진행됩니다. 총알의 파괴 이팩트의 속도를 조절하고 싶다면
     </p>
 
     <p style="padding-left:40px;">
-        <span class="code">CreateBullet</span>
-        의 반환값을 통해 <span class="code">Animator.speed = 0f;</span>
-        으로 초기화해줄 것을 추천합니다.
+        <span class="code">destroyAnim</span>
+        대신, <span class="code">onDestroy</span>
+        소멸자에서 직접 이팩트용 총알을 생성해야 합니다.
     </p>
- 
+
      <br>
      <h1 style="padding-left:60px; border-bottom:none">Property Value</h1>
   
