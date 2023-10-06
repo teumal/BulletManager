@@ -24,7 +24,8 @@ public sealed class BulletManager : MonoBehaviour {
     //////////////////////
 
 
-    private static BulletManager Inst = null; // the single-ton instance
+    private static BulletManager Inst = null;  // the single-ton instance
+    private static readonly Bullet.Intelligence isDestroyAnim = (b,c)=>{};  // the indicator whether the current bullet is playing `destroyAnim`
 
     private BulletPool mBullets = new BulletPool(); // the allocator to get a bullet with no `Rigidbody2D`.
     private BulletPool mBodies  = new BulletPool(); // the allocator to get a bullet with `Rigidbody2D`.
@@ -211,9 +212,10 @@ public sealed class BulletManager : MonoBehaviour {
 
         if (thisBullet.transform.gameObject.activeSelf) { // update if only the root gameObject is activated
 
-            if (thisBullet.gameObject.layer == mEffectLayer) {
+            if (thisBullet.onTrigger == isDestroyAnim) {
+                
                 thisBullet.animator.speed = 1f;
-                thisBullet.animator.Update(deltaTime);
+                thisBullet.animator.Update(deltaTime); // update destroyAnim deterministically
                 thisBullet.animator.speed = 0f;
 
                 if(!thisBullet.transform.gameObject.activeSelf) { // when the `DestroyThisBullet` Animation Event is invoked,
@@ -279,11 +281,11 @@ public sealed class BulletManager : MonoBehaviour {
                 target.onDestroy?.Invoke(target); // call the destructor of `target`, 
                 target.onUpdate         = null;   // then recycles the instance of `target` immediately
                 target.onDestroy        = null;
-                target.onTrigger        = null;
-                target.destroyAnim      = null;
-                target.gameObject.layer = Inst.mEffectLayer;
-                target.speed            = 0f;  // for `Animator.Update`.
-                target.animator.speed   = 0f;
+                target.onTrigger        = isDestroyAnim;     // for indicating this bullet is playing `destroyAnim`
+                target.destroyAnim      = null;              
+                target.gameObject.layer = Inst.mEffectLayer; 
+                target.speed            = 0f;                // `destroyAnim` can not move
+                target.animator.speed   = 0f;                // for `Animator.Update`.
                 target.animator.Play(destroyAnim);
                 return;
             }
@@ -462,9 +464,8 @@ public sealed class BulletManager : MonoBehaviour {
 
 
     // bulletScope getter/setter
-    static public Rect bulletScope {
-        get { return Inst._bulletScope; }
-        set { Inst._bulletScope = value; }
+    static public ref Rect bulletScope {
+        get { return ref Inst._bulletScope; }
     }
 
 
