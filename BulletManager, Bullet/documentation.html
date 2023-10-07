@@ -2948,7 +2948,7 @@
      <h1 style="padding-left:60px; border-bottom:none">Property Value</h1>
   
      <p style="padding-left:80px;">
-        총알을 발사한 몹의 참조이며, 이 문서와 함께 제공되는 기본 타입은 <span class="code">MobBase</span>
+        총알이 목표로 하는 몹의 참조이며, 이 문서와 함께 제공되는 기본 타입은 <span class="code">MobBase</span>
         입니다.
      </p>
 
@@ -3036,7 +3036,7 @@
                 thisBullet.spriteRenderer.material = spriteDefault;
               }
               thisBullet.rigidbody.MovePosition(
-                thisBullet.rigidbody.position + velocity + knockback;
+                thisBullet.rigidbody.position + velocity + knockback
               );
               knockback *= 0.9f;
               velocity   = Vector2.zero;
@@ -3064,7 +3064,6 @@
               Bullet hit = BulletManager.GetBullet(c.gameObject);
 
               if(hit != null) {
-                b.DestroyThisBullet();
                 hit.stat?.GetDamage(b.shooter.stat);
               }
               b.DestroyThisBullet();
@@ -3073,7 +3072,8 @@
            public static readonly Bullet.Intelligence doNothing = (b,c)=>{};
 
            public static readonly Bullet.Intelligence mobDestructor = (b,c)=>{
-              b.stat = null;
+              b.stat               = null;
+              b.collider.isTrigger = true;
            };
 
 
