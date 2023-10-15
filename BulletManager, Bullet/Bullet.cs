@@ -95,6 +95,15 @@ public class Bullet : MonoBehaviour {
     }
 
 
+    // OnCollisionEnter2D() Method
+    private void OnCollisionEnter2D(Collider2D collision) {
+        if (gameObject.layer == BulletManager.effectLayer) { // when the layer of this gameObject is "Effect",
+            return;                                          // thisBullet is confirmed destruction or for effect.
+        }
+        onCollision?.Invoke(this, collision);
+    }
+
+
     // DestroyThisBullet() Method
     public void DestroyThisBullet() {
         BulletManager.DestroyBullet(this);
