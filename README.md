@@ -225,7 +225,9 @@ public class Example : MonoBehaviour {
 
 `Bullet.RegisterSet`는 아주 귀중한 자원이므로 가능하다면 최소한으로 쓸 수 있도록 해야합니다. 기본적으로 **floating-point** 를 위한 레지스터 변수 `f1, f2, f3, f4`. **integral number**를 위한 레지스터 변수 `i1, i2, i3, i4`가 제공됩니다. 프로젝트에 따라, 레지스터의 갯수를 줄이거나 늘리는 것을 허용합니다. 물론, 모든 총알의 크기가 커질 수 있음에 유의하시길 바랍니다. 상황에 따라서는 `Bullet.lookAt`, `Bullet.speed` 또한 레지스터 변수로서 사용할 수 있지만, 권장하지는 않습니다. <br><br>
 
-위 코드에서 레이저의 기둥을 표현하기 위해서 `LineRenderer`를 사용했습니다. `lineRenderer.sharedMaterial` 을 사용했는데, 이는 기존의 `lineRenderer.material`이 항상 새로운 `Material` 객체를 만들어내기 때문입니다. Render Pipeline 에 따라서 `MaterialPropertyBlock` 을 고려해볼 수 있겠습니다.  <br><br>
+위 코드에서 레이저의 기둥을 표현하기 위해서 `LineRenderer`를 사용했습니다. `lineRenderer.sharedMaterial` 을 사용했는데, 이는 기존의 `lineRenderer.material`이 항상 새로운 `Material` 인스턴스를 만들어내기 때문입니다. Render Pipeline 에 따라서 `MaterialPropertyBlock` 을 고려해볼 수 있겠습니다. 레이저 기둥의 애니메이션은 위의 셰이더 코드처럼 UV 애니메이션으로 처리합니다. <br><br>
+
+예제에서는 벽과 총알 모두 `Rigidbody2D` 가 부착되어 있지 않습니다. 그렇기에 `onTrigger` 또한 호출되지 않았습니다. 또한 `BoxCast` 에서는 `layerMask` 인자를 주지 않았기에 원래 총알 자기 자신 또한 `BoxCast`의 대상입니다. 여기서는 "Ignore Raycast" 레이어를 주었지만, 실제로는 `layerMask` 인자를 줘야 합니다.
 
 
 
