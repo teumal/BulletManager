@@ -155,7 +155,7 @@ public class Example : MonoBehaviour {
     }
 }
 ```
-
+<img src="https://github.com/teumal/BulletManager/blob/main/laser%20example.gif?raw=true">
 
 
 
