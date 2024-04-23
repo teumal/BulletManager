@@ -86,6 +86,7 @@ void Update() {
 ## 3.1. 간단한 레이저빔
 ``` shader
 // LaserAnim.shader
+// for Builtin Render Pipeline
 Shader "Custom/LaserAnim" {
 
     Properties {
@@ -198,7 +199,7 @@ public class Example : MonoBehaviour {
             else if(hit.collider.name=="TopWall")   zAngle = -180f;
 
             b.transform.localRotation = Quaternion.Euler(0f,0f, zAngle);
-            b.transform.position      = hit.point - direction * 0.5f;
+            b.transform.position      = hit.point - direction * 0.5f; // (direction * 0.5f) 는 위치를 조금 조정하는 용도.
             b.lineRenderer.SetPosition(0, hit.point);
         };
         newBullet.onDestroy = (b, c) => {
@@ -211,7 +212,21 @@ public class Example : MonoBehaviour {
 ```
 <img src="https://github.com/teumal/BulletManager/blob/main/laser%20example.gif?raw=true">
 
-위 예제는 원점 `Vector2.zero`에서, 마우스 커서의 방향으로 발사되는 레이저를 구현합니다. 
+위 예제는 원점 `Vector2.zero`에서, 마우스 커서를 향해 발사되는 레이저를 구현합니다. 화면은 `LeftWall`, `RightWall`, `TopWall`, `BottomWall` 이라는 4개의 벽으로 사방이 막혀있기에, 레이저는 항상 4개의 벽중 하나에 부딪힌다고 가정합니다. 이렇게 `CreateLaser()` 메소드로 생성된 레이저는 인자로 준 `duration` 의 시간이 지나면서 자연스럽게 사라집니다. <br><br>
+
+위 코드는 총알의 지능을 다음의 규칙(convention)을 따라 작성하였습니다:
+- `onUpdate` 와 같은 지능들은 기본적으로 `lambda expression` 을 사용했으며, 그 인자는 항상 `(b,c)=>{}` 와 같은 식입니다. 람다식의 인자는 각각 `Bullet thisBullet`, `Collider2D collision` 을 의미합니다. `c`는 `onTrigger`, `onCollision` 인 경우에만 `c != null` 입니다. 
+
+- `Bullet.registers`가 여유롭다면, 가능한 람다식의 캡처를 사용하지 않도록 합니다. 이는 람다식이 항상 박싱(Boxing)되는 것을 방지하기 위함입니다. 여기서는 `f1`을 `timer`로, `f2`를 `duration`을 사용했습니다. 만약 여유 레지스터들이 부족하다면, 필요한 변수를 캡처합니다.
+
+- `LineRenderer.positionCount`와 같이 정리를 해주어야하는 자원들은 `onDestroy` 지능에서 디폴트(default)값으로 초기화해줍니다.
+
+- `b.DestroyThisBullet()`을 호출했다면, 그 다음에는 바로 `return`을 해줍니다.
+
+`Bullet.RegisterSet`는 아주 귀중한 자원이므로 가능하다면 최소한으로 쓸 수 있도록 해야합니다. 기본적으로 **floating-point** 를 위한 레지스터 변수 `f1, f2, f3, f4`. **integral number**를 위한 레지스터 변수 `i1, i2, i3, i4`가 제공됩니다. 프로젝트에 따라, 레지스터의 갯수를 줄이거나 늘리는 것을 허용합니다. 물론, 모든 총알의 크기가 커질 수 있음에 유의하시길 바랍니다. 상황에 따라서는 `Bullet.lookAt`, `Bullet.speed` 또한 레지스터 변수로서 사용할 수 있지만, 권장하지는 않습니다. <br><br>
+
+위 코드에서 레이저의 기둥을 표현하기 위해서 `LineRenderer`를 사용했습니다. `lineRenderer.sharedMaterial` 을 사용했는데, 이는 기존의 `lineRenderer.material`이 항상 새로운 `Material` 객체를 만들어내기 때문입니다. Render Pipeline 에 따라서 `MaterialPropertyBlock` 을 고려해볼 수 있겠습니다.  <br><br>
+
 
 
 
