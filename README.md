@@ -429,8 +429,8 @@ public class Player : MonoBehaviour {
             if (c.gameObject.layer == (int)LayerType.PlayerAttack) {
                 Bullet slash = BulletManager.GetBullet(c.gameObject);
 
-                slash.onTrigger(slash, b.collider); // 우선순위에 밀린 `slash.onTrigger`를 호출해준다.
-                b.gameObject.layer = (int)LayerType.PlayerAttack;
+                b.gameObject.layer = (int)LayerType.PlayerAttack; // `ball`은 이제 플레이어의 공격으로 취급.
+                slash.onTrigger(slash, b.collider);               // 우선순위에 밀린 `slash.onTrigger`를 호출해준다. 
                 return;
             }
             b.gameObject.layer = (int)LayerType.EnemyAttack;
@@ -502,12 +502,16 @@ public class Player : MonoBehaviour {
 
 - `CreateSword()` 메소드는 플레이어를 따라다니는 검을 생성합니다. 물론 검 또한 `Bullet` 입니다. 검은 플레이어에게 시각적인 정보만을 주는 용도이므로, `sword.gameObject.layer = BulletManager.effectLayer` 를 해주어 이팩트용 총알로 만들어 주었습니다. 특이하게도 `sword.animator.Play("Static", 0, 0f);` 처럼 해주었는데, `"Static"`이라는 animation clip 하나에 여러가지의 스프라이트들을 담아두기 위함입니다. 검은 공격할 방향을 알려주며, 마우스 좌클릭을 눌러 참격을 날리며, 검을 휘두르는 모션을 수행합니다. <br><br>
 
-- `CreateSlash()` 메소드는 시각적인 용도인 검과 달리, 충돌판정이 필요하기에 `BulletManager.CreateBullet()`의 `withRigidbody=true` 처럼 인자를 전달해주었습니다. 이렇게 생성된 `slash` 객체는 `Rigidbody2D`가 부착되어 있습니다. 부착된 `Rigidbody2D`는 `BulletManager`에 의해 별도로 관리되므로 컴포넌트를 제거하지 마십시오. <br><br>주목할 것은 `b.lookAt`을 `Vector2` 타입의 레지스터 변수로 사용했다는 점과, `onUpdate`에 `b.DestroyThisBullet()`을 호출하지 않는다는 점입니다. 위에서도 언급했듯이, `b.lookAt` 을 레지스터 변수로 사용하는 것은 권장하지 않습니다. 누군가가 `slash.lookAt`을 방향벡터로 생각하고 수정할 수도 있기 때문입니다. 여기서는 편의를 위해 이렇게 해주었지만, 실제로는 `RegisterSet` 구조체를 수정해서 `Vector2 v1` 과 같은 레지스터 변수를 정의하거나, 벡터의 각 성분들을 `f1`, `f2` 에 따로 담아두는 것을 권장합니다.
+- `CreateSlash()` 메소드는 시각적인 용도인 검과 달리, 충돌판정이 필요하기에 `BulletManager.CreateBullet()`의 `withRigidbody=true` 처럼 인자를 전달해주었습니다. 이렇게 생성된 `slash` 객체는 `Rigidbody2D`가 부착되어 있습니다. 부착된 `Rigidbody2D`는 `BulletManager`에 의해 별도로 관리되므로 컴포넌트를 제거하지 마십시오. <br><br>주목할 것은 `b.lookAt`을 `Vector2` 타입의 레지스터 변수로 사용했다는 점과, `onUpdate`에 `b.DestroyThisBullet()`을 호출하지 않는다는 점입니다. 위에서도 언급했듯이, `b.lookAt` 을 레지스터 변수로 사용하는 것은 권장하지 않습니다. 누군가가 `slash.lookAt`을 방향벡터로 생각하고 수정할 수도 있기 때문입니다. 여기서는 편의를 위해 이렇게 해주었지만, 실제로는 `RegisterSet` 구조체를 수정해서 `Vector2 v1` 과 같은 레지스터 변수를 정의하거나, 벡터의 각 성분들을 `f1`, `f2` 에 따로 담아두는 것을 권장합니다. <br><br>
+`slash.onUpdate`에는 `DestroyThisBullet()`을 호출하지 않는데, 이는 `"Slash"` animation clip 에서 animation event 로서 `DestroyThisBullet()` 을 호출하기 때문입니다. 이는 `"Effect"`, `"Explosion"` animation clip 또한 매한가지입니다. <br><br>
 
-- `CreateCatchBall()` 메소드는 플레이어와 적이 주고받는 캐치볼을 생성합니다. `ball`은 `interval` 간격마다 `"Effect"`라는 애니메이션을 가진 잔상을 생성합니다. 조금 오버헤드가 있을 수 있지만, 잔상으로 사용된 `Bullet`은 금방 파괴되며 가까운 `BulletManager.CreateBullet()` 호출에서 높은 확률로 재사용되므로 편의성을 고려한 절충안으로 생각할 수 있습니다. <br><br>
+- `CreateCatchBall()` 메소드는 플레이어와 적이 주고받는 캐치볼을 생성합니다. `ball`은 `interval` 간격마다 `"Effect"`라는 애니메이션을 가진 잔상을 생성합니다. 조금 오버헤드가 있을 수 있지만, 잔상으로 사용된 `Bullet`은 금방 파괴되며 가까운 `BulletManager.CreateBullet()` 호출에서 높은 확률로 재사용되므로 편의성을 고려한 절충안으로 생각할 수 있습니다. <br><br> 여기서 핵심은 `triggerOrder` 속성입니다. A,B 라는 GameObject 가 있다고 할때, 누구의 `Update()`가 먼저 호출될까요?. 알 수 없지요. 총알이 다른 총알을 수정하는데 있어서 `OnTriggerXXX` event function 의 호출 순서가 매우 중요한 요소입니다. 이를 위해 `Bullet`은 `triggerOrder` 라는 속성을 제공합니다. 높을 수록 우선순위가 커지며, 우선순위가 낮은 총알의 `OnTriggerXXX`는 무시되도록 합니다. 해당 속성은 총알끼리의 충돌에서만 의미가 있으며, `onTrigger` 지능에서 `triggerOrder`를 수정하는 것은 **Undefined Behavior** 임을 알아두시길 바랍니다. <br><br> 덕분에 `triggerOrder==0`인 `slash` 총알과 부딪혔을 때, `slash.onTrigger`는 호출되지 않습니다. 우선순위에 밀려 무시되기 때문입니다. 그럼에도 불구하고, `ball.onTrigger`가 호출된 이후에 `slash.onTrigger`는 호출되어야 한다면, 위 예제처럼 `ball` 측에서 할일을 마친 후 직접 `slash.onTrigger`를 호출해주도록 합니다. Collision Matrix Setting을 통해서 `LayerType.PlayerAttack` 끼리는 충돌하지 않게 했으므로, 사실 의미는 없습니다. <br><br>
 
 
+- `ShakeCamera()` 메소드는 카메라에 흔들림을 주는 총알을 생성합니다. `Coroutine`으로 구현할때와 다르게, 총알의 인스턴스는 계속 재사용되기 때문에 가비지 생성에 대한 부담이 줄어든다는 장점이 있습니다. 생성된 `cameraShaker` 총알은 시각적으로 보이거나 물체와 충돌하면 안되기 때문에, `cameraShaker.gameObject.layer = BulletManager.effectLayer` 처럼 이팩트용 총알로 만들어주었습니다. <br><br>
 
-- `ShakeCamera()` 메소드는 카메라에 흔들림을 주는 총알을 생성합니다. `Coroutine`으로 구현할때와 다르게, 총알의 인스턴스는 계속 재사용되기 때문에 가비지 생성에 대한 부담이 줄어든다는 장점이 있습니다. 생성된 `cameraShaker` 총알은 시각적으로 보이거나 물체와 충돌하면 안되기 때문에, `cameraShaker.gameObject.layer = BulletManager.effectLayer` 처럼 이팩트용 총알로 만들어주었습니다. 특이한점으로는 `cameraShaker` 또한 `lookAt` 을 레지스터 변수로 사용했다는 것입니다. 여기서는 문제될 것이 없습니다. 해당 총알을 누군가가 참조하는 것도 아니며, 충돌하지도 않기 때문입니다.<br><br>
+- `ScaleTime()` 메소드는 일시적인 시간정지 효과를 부여합니다. 이를 위해 `Time.timeScale`을 수정합니다. 물론 이 효과가 영구적이면 안되기에, `timeScaler`라는 총알을 생성하여 일정수만큼 프레임이 지나면 `Time.timeScale = 1f` 처럼 값을 복구하도록 지능을 주었습니다.
 
-- `ScaleTime()` 메소드는 일시적인 시간정지 효과를 부여합니다. 이를 위해 `Time.timeScale`을 수정합니다. 물론 이 효과가 영구적이면 안되기에, `timeScaler`라는 총알을 생성하여 일정수만큼 프레임이 지나면 `Time.timeScale = 1f` 처럼 값을 복구하도록 했습니다. 
+### 4. 마치며
+튜토리얼은 여기서 마칩니다. 나머지는 `documentation.html`을 읽어보시길 바랍니다. 
+
