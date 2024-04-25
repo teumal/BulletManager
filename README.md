@@ -1,7 +1,7 @@
 # BulletManager
 
 ## Overview
-2D 탑뷰 시점 슈팅 게임에서 총알을 관리하기 위한 script component 입니다. `Bullet`, `BulletManager`, `MobBase` 이렇게 세 개의 C# script 가 존재합니다. <br><br>
+2D 탑뷰 시점 슈팅 게임에서 총알을 관리하기 위한 script component 입니다. `Bullet`, `BulletManager`, `MobBase` 이렇게 세 개의 C# script 가 존재합니다. 여기서 `MobBase.cs`는 필수가 아닙니다. <br><br>
 
 # Tutorial
 ## 1. 프리팹의 생성과 등록
@@ -75,12 +75,14 @@ void Update() {
 ```
 위 예제는 `Vector2.zero`에서 생성되어서, `Vector2.up`의 방향으로 1초에 `2f` 만큼 이동하는 총알을 생성합니다. 또한 총알은 `"Default"` 이라는 애니메이션을 사용하며, 파괴될 시점에서 `"Explosion"` 애니메이션이 실행되게 됩니다. 여기서 파괴될 시점은 화면을 벗어나거나, 무언가와 부딪힌 경우를 의미합니다. <br><br>
 
-총알에 지능을 주지 않으면, 처음에 주어진 위치(position)에서 정해진 방향(lookAt)과 속도(speed)로 날라가다가 화면 밖으로 나갈 경우, 파괴되는 지능이 없는 총알을 생성합니다. 
+여기서 "Explosion" 과 같은 animation clip 들은 항상 애니메이션의 끝에 `DestroyThisBullet()` 을 animation event 로 사용해야 합니다. 또한, 총알은 자동을 갱신되지 않는 것을 알 수 있습니다. 고로 `BulletManager.Update(Time.deltaTime)` 처럼 직접 `Update()` 에서 호출을 해주어야 한다는 의미입니다. 이와 관련해서 자세한 것은 `documentation.html`을 참고하시길 바랍니다. <br><br>
+
+총알에 지능을 주지 않으면, 처음에 주어진 위치(position)에서 정해진 방향(lookAt)과 속도(speed)로 날라가다가 화면 밖으로 나갈 경우, 파괴되는 지능이 없는 총알을 생성합니다. 이를 기본동작(default beahviour)이라고 합니다. 사용자 정의 동작(user-defined behaviour)을 수행하는 총알을 만들고 싶다면 총알에 지능을 주어야 합니다. 
 
 <br><br>
 
 ## 3. 총알의 지능
-총알은 단순한 발사체(projectile)가 아닙니다. `onUpdate`, `onTrigger`, `onCollision`, `onDestroy` 등의 총 4가지의 지능을 통해, 적을 추적하거나 총알이 총알을 소환하는 마치 적(enemy)으로서도 행동할 수 있으며, 레이저가 되거나, 서로의 총알을 튕겨내는 등 여러가지의 것들을 할 수 있습니다. 
+총알은 단순한 발사체(projectile)가 아닙니다. `onUpdate`, `onTrigger`, `onCollision`, `onDestroy` 등의 총 4가지의 지능을 통해, 적을 추적하거나 총알이 총알을 소환하는 마치 적(enemy)으로서도 행동할 수 있으며, 레이저가 되거나, 서로의 총알을 튕겨내는 등 여러가지의 것들을 할 수 있습니다. 지능을 추가하기 위해서는 `tag`, `layer` 등의 여러가지 속성들을 초기화해야합니다. 이와 같은 추가 초기화(extra initialization)는 `BulletManager.CreateBullet()` 이 돌려주는 반환값을 통해 수행하시길 바랍니다. 한번 다음 2개의 예시를 통해, 어떻게 총알의 지능을 부여하고 다루는지 알아봅시다:
 
 
 ## 3.1. 간단한 레이저빔
@@ -513,5 +515,5 @@ public class Player : MonoBehaviour {
 - `ScaleTime()` 메소드는 일시적인 시간정지 효과를 부여합니다. 이를 위해 `Time.timeScale`을 수정합니다. 물론 이 효과가 영구적이면 안되기에, `timeScaler`라는 총알을 생성하여 일정수만큼 프레임이 지나면 `Time.timeScale = 1f` 처럼 값을 복구하도록 지능을 주었습니다.
 
 ### 4. 마치며
-튜토리얼은 여기서 마칩니다. 나머지는 `documentation.html`을 읽어보시길 바랍니다. 
+튜토리얼은 여기서 마칩니다. 나머지는 `documentation.html`을 읽어보시길 바랍니다. 또한 예제에서 사용한 스프라이트(sprites)들은 `example_resources.7zip`을 다운받으시면 됩니다.
 
