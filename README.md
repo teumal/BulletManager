@@ -227,8 +227,287 @@ public class Example : MonoBehaviour {
 
 위 코드에서 레이저의 기둥을 표현하기 위해서 `LineRenderer`를 사용했습니다. `lineRenderer.sharedMaterial` 을 사용했는데, 이는 기존의 `lineRenderer.material`이 항상 새로운 `Material` 인스턴스를 만들어내기 때문입니다. Render Pipeline 에 따라서 `MaterialPropertyBlock` 을 고려해볼 수 있겠습니다. 레이저 기둥의 애니메이션은 위의 셰이더 코드처럼 UV 애니메이션으로 처리합니다. <br><br>
 
-예제에서는 벽과 총알 모두 `Rigidbody2D` 가 부착되어 있지 않습니다. 그렇기에 `onTrigger` 또한 호출되지 않았습니다. 또한 `BoxCast` 에서는 `layerMask` 인자를 주지 않았기에 원래 총알 자기 자신 또한 `BoxCast`의 대상입니다. 여기서는 "Ignore Raycast" 레이어를 주었지만, 실제로는 `layerMask` 인자를 줘야 합니다.
+예제에서는 벽과 총알 모두 `Rigidbody2D` 가 부착되어 있지 않습니다. 그렇기에 `onTrigger` 또한 호출되지 않았습니다. 또한 `BoxCast` 에서는 `layerMask` 인자를 주지 않았기에 원래 총알 자기 자신 또한 `BoxCast`의 대상입니다. 여기서는 "Ignore Raycast" 레이어를 주었지만, 실제로는 `layerMask` 인자를 줘야 합니다. <br><br>
+
+## 3.2. 캐치 볼
+``` c#
+using UnityEngine;
+
+enum LayerType : int {
+    Default,
+    TransparentFX,
+    IgnoreRaycast,
+    Effect,
+    Water,
+    UI,
+    PlayerAttack,
+    Player,
+    Enemy,
+    EnemyAttack,
+};
+
+
+public class Player : MonoBehaviour {
+    public static Camera mainCamera;
+
+    public     GameObject  enemy;     
+    new public Rigidbody2D rigidbody;
+    public     Vector2     velocity;
+
+    // Start() Method
+    private void Start() {
+        rigidbody  = GetComponent<Rigidbody2D>();
+        mainCamera = Camera.main;
+
+        CreateSword();
+        CreateCatchBall(enemy, gameObject);
+        Application.targetFrameRate = 60; // 에디터에서도 60프레임이 나오도록 조정
+    }
+
+
+    // Update() Method
+    private void Update() {
+        BulletManager.Update(Time.deltaTime);
+
+        Vector2 force = new Vector2(
+           Input.GetAxis("Horizontal"),
+           Input.GetAxis("Vertical")
+        );
+        velocity += force * (Time.deltaTime * 8f);
+    }
+
+
+    // FixedUpdate() Method
+    private void FixedUpdate() {
+        rigidbody.MovePosition(rigidbody.position + velocity);
+        velocity = Vector2.zero;
+    }
+
+    // CreateSword() Method
+    private void CreateSword() {
+        Bullet sword = BulletManager.CreateBullet(transform.position, default, default, "Static");
+
+        sword.gameObject.layer = BulletManager.effectLayer; // 검은 어떤 물체와도 부딪히지 않음. LayerType.Effect
+        sword.animator.speed   = 0f;                        // 애니메이션은 움직이지 않는다.
+        sword.shooter          = gameObject;                // `GameObject shooter;` 로 정의돼있음.
+
+        sword.registers.f1 = 0f; // f1: timer
+        sword.registers.i1 = 1;  // i1: step
+
+        sword.onUpdate = (b, c) => {
+            ref float timer     = ref b.registers.f1;
+            ref int   step      = ref b.registers.i1;
+            float     deltaTime = Time.deltaTime;
+
+            // step 1) 검이 마우스 커서를 향해 바라보게 하고, 마우스 좌클릭으로 공격을 시전
+            if(step == 1) {
+                Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                Vector2 direction     = (mousePosition - (Vector2)b.shooter.transform.position).normalized;
+                float zAngle          = Vector2.SignedAngle(Vector2.right, direction);
+
+                b.transform.localRotation     = Quaternion.Euler(0f, 0f, zAngle); // 마우스 커서의 방향으로 회전
+                b.spriteRenderer.sortingOrder = direction.y < 0f ? 1 : -1;        // 각도에 따라 검이 플레이어에게 가려진다.
+
+                if (Input.GetMouseButtonDown(0)) {
+                    timer = 0f;
+                    step  = 2;                       
+                    b.transform.Rotate(0f, 0f, 75f);       // 검을 반시계방향으로 75도 회전
+                    CreateSlash(zAngle, ref direction, b); // 참격을 생성.
+                }
+            }
+
+            // step 2) 0.2 초가 지나면, 검을 시계방향으로 150도 회전
+            else if(step == 2) {
+
+                if((timer += deltaTime) > 0.2f) {
+                    step = 3;
+                    b.transform.Rotate(0f,0f,-150f);
+                }
+            }
+            
+            // step 3) 0.1초 동안, 검을 부드럽게 회전
+            else {
+                b.transform.Rotate(0f,0f, 750f * deltaTime);
+
+                if((timer += deltaTime) > 0.3f) {
+                    step = 1;
+                }
+            }
+
+            b.transform.position = b.shooter.transform.position; // 검은 플레이어를 따라다닌다.
+        };
+    }
+
+
+    // CreateSlash() Method
+    private static void CreateSlash(float zAngle, ref Vector2 direction, Bullet sword) {
+        Vector2 position = (Vector2) sword.transform.position + direction;
+        Bullet  slash    = BulletManager.CreateBullet(position, default, default, "Slash", null, null, null, null, true);
+
+        slash.gameObject.layer = (int) LayerType.PlayerAttack;
+        slash.shooter          = sword.transform.gameObject;
+        slash.transform.Rotate(0f,0f,zAngle);
+
+        slash.lookAt = direction; // lookAt: direction
+
+        slash.onUpdate = (b, c) => {
+            ref Vector2 direction = ref b.lookAt;
+            b.transform.position  = (Vector2) b.shooter.transform.position + direction;
+        };
+        slash.onTrigger = (b, c) => {
+            b.gameObject.layer = BulletManager.effectLayer;
+        };
+    }
+
+
+    // CreateEffect() Method
+    private static void CreateEffect(Vector2 position, string updateAnim, int sortingOrder) {
+        Bullet effect = BulletManager.CreateBullet(position, default, 0f, updateAnim);
+
+        effect.spriteRenderer.sortingOrder = sortingOrder;
+        effect.gameObject.layer            = BulletManager.effectLayer;
+        effect.onDestroy                   = (b,c)=>{ b.spriteRenderer.sortingOrder = 0; };
+    }
+
+
+    // CreateCatchBall() Method
+    private static void CreateCatchBall(GameObject shooter, GameObject target) {
+        Bullet ball = BulletManager.CreateBullet(
+           shooter.transform.position,
+           (target.transform.position-shooter.transform.position).normalized,
+           4f,
+           null,
+           "Explosion"
+        );
+        ball.shooter = shooter;
+        ball.target  = target;
+
+        ball.triggerOrder     = 1; // `CreateSlash()`로 생성한 Bullet의 onTrigger보다 우선순위를 높게한다.
+        ball.gameObject.layer = (int) LayerType.EnemyAttack;
+        ball.animator.speed   = 0f;
+        ball.animator.Play("Static", 0, 1f);
+
+        ball.registers.f1 = 0f;   // f1: timer
+        ball.registers.f2 = 0.3f; // f2: interval
+        ball.registers.i1 = 0;    // i1: hitCount
+
+        ball.onUpdate = (b, c) => {
+            ref float timer     = ref b.registers.f1;
+            ref float interval  = ref b.registers.f2;
+            float     deltaTime = Time.deltaTime;
+
+            if((timer += deltaTime) > interval) {                 // interval 초마다 한번씩
+                CreateEffect(b.transform.position, "Effect", -1); // 잔상을 생성한다.
+                timer -= interval;
+            }
+            b.transform.Rotate(0f,0f,-800f * deltaTime); // 자전하면 날아간다.
+            b.BehaveDefault(deltaTime);                  // 기본동작을 수행하여 움직인다.
+        };
+        ball.onTrigger = (b, c) => {
+            ref float interval = ref b.registers.f2;
+            ref int   hitCount = ref b.registers.i1;
+
+            // 플레이어와 부딪히거나, 패스횟수가 20번을 넘어가면, 적은 받아치는데 실패함. 
+            if(c.gameObject.layer == (int) LayerType.Player || hitCount > 20 && c.gameObject.layer == (int) LayerType.Enemy) {
+                ShakeCamera(0.2f, 10);
+                b.DestroyThisBullet();
+                return;
+            }
+            ScaleTime(0.01f, 5);                              // 타격감을 위해, 시간을 느리게 한다.
+            ShakeCamera(0.05f, 5);                            // 카메라 흔들림 효과
+            CreateEffect(b.transform.position, "Reflect", 2); // 튕겨내는 효과를 생성한다.
+
+            b.lookAt = (b.shooter.transform.position - b.target.transform.position).normalized; // 방향 반전
+            interval = Mathf.Max(0.15f, interval - 0.0375f);                                    // 잔상효과의 생성간격이 점점 줄어든다. 최소 0.15초
+            b.speed++;                                                                          // 패스할때마다 속도가 1f 씩 증가
+            hitCount++;                                                                         // 패스 횟수를 기록한다.
+
+            var temp  = b.shooter;
+            b.shooter = b.target;
+            b.target  = temp; // swap(b.shooter, b.target);
+
+            if (c.gameObject.layer == (int)LayerType.PlayerAttack) {
+                Bullet slash = BulletManager.GetBullet(c.gameObject);
+
+                slash.onTrigger(slash, b.collider); // 우선순위에 밀린 `slash.onTrigger`를 호출해준다.
+                b.gameObject.layer = (int)LayerType.PlayerAttack;
+                return;
+            }
+            b.gameObject.layer = (int)LayerType.EnemyAttack;
+        };
+    }
+
+
+    // ShakeCamera() Method
+    private static void ShakeCamera(float shakePow, int loopCount=10) {  
+        Bullet cameraShaker = BulletManager.CreateBullet(default,default,default,"None");
+
+        cameraShaker.gameObject.layer = BulletManager.effectLayer;
+        cameraShaker.lookAt           = Vector2.right;
+        cameraShaker.registers.f1     = shakePow * (1f / loopCount); // f1: sub
+        cameraShaker.registers.f2     = shakePow;                    // f2: shakePow
+        cameraShaker.registers.f3     = 0.025f;                      // f3: delay
+        cameraShaker.registers.i1     = 0;                           // i1: count
+
+        cameraShaker.onUpdate = (b, c) => {
+            ref float sub      = ref b.registers.f1;
+            ref float shakePow = ref b.registers.f2;
+            ref float delay    = ref b.registers.f3;
+            ref int   count    = ref b.registers.i1;
+            
+            if(shakePow <= 0f) {       // shakwPow 가 바닥나면,
+                b.DestroyThisBullet(); // cameraShaker의 인스턴스는 BulletManager가 회수한다.
+                return;
+            }
+
+            if((delay += Time.deltaTime) > 0.025f) {                           
+                mainCamera.transform.position += (Vector3)b.lookAt * shakePow; // 0.025 초마다 카메라를 이동.
+                b.lookAt = new Vector2(b.lookAt.y, -b.lookAt.x);               // `b.lookAt`을 90도 회전.
+                delay -= 0.025f;                                               // 타이머 초기화.
+
+                if (++count == 4) {  // 상하좌우로 모두 이동할때마다
+                    shakePow -= sub; // shakePow 를 감소시킨다.
+                    count     = 0;
+                }
+            }
+        };
+    }
+
+
+    // ScaleTime() Method
+    private static void ScaleTime(float scaleRatio, int skipFrame) {
+
+        if (Time.timeScale >= 1f) {
+
+            Bullet timeScaler = BulletManager.CreateBullet(default, default, default, "None", null, (b, c) => {
+                ref int frameCount = ref b.registers.i1;
+                ref int skipFrame  = ref b.registers.i2;
+
+                if (frameCount++ >= skipFrame) { // skipFrame 만큼의 프레임이 지나면,
+                    Time.timeScale = 1f;         // 시간의 흐름을 원래대로 되돌린후
+                    b.DestroyThisBullet();       // `timeScaler`의 인스턴스를 BulletManager가 회수한다.
+                }
+            });
+            timeScaler.registers.i1 = 0;         // i1: frameCount
+            timeScaler.registers.i2 = skipFrame; // i2: skipFrame
+
+            Time.timeScale = scaleRatio; // scaleRatio 배 만큼 시간을 느리게 한다.
+        }
+    }
+}
+```
+<img src="https://github.com/teumal/BulletManager/blob/main/catchball%20example.gif?raw=true">
+
+이번 예제에서는 총알이 발사체(projectile) 이외의 것을 수행할 수 있다는 것을 확실히 보여줍니다. 한번 차례대로 살펴보도록 하겠습니다. 특히나 `BulletManager.effectLayer` 가 핵심입니다. 처음에 `BulletManager`를 사용하려고 하면, `"BulletManager could not find "Effect" Layer"` 라는 에러가 출력될 것입니다. 이는 **이팩트용 총알**을 구현하기 위해서, `BulletManager`가 `Effect` 라는 이름의 Layer 를 정의할 것을 요구하기 때문입니다. 이팩트용 총알은 단순히 `gameObject.layer == BulletManager.effectLayer` 인 총알을 의미하며, 어떠한 물체와도 충돌할 수 없는 총알을 의미합니다. 한번 위 코드를 분석해봅시다:<br><br>
+
+- `CreateSword()` 메소드는 플레이어를 따라다니는 검을 생성합니다. 물론 검 또한 `Bullet` 입니다. 검은 플레이어에게 시각적인 정보만을 주는 용도이므로, `sword.gameObject.layer = BulletManager.effectLayer` 를 해주어 이팩트용 총알로 만들어 주었습니다. 특이하게도 `sword.animator.Play("Static", 0, 0f);` 처럼 해주었는데, `"Static"`이라는 animation clip 하나에 여러가지의 스프라이트들을 담아두기 위함입니다. 검은 공격할 방향을 알려주며, 마우스 좌클릭을 눌러 참격을 날리며, 검을 휘두르는 모션을 수행합니다. <br><br>
+
+- `CreateSlash()` 메소드는 시각적인 용도인 검과 달리, 충돌판정이 필요하기에 `BulletManager.CreateBullet()`의 `withRigidbody=true` 처럼 인자를 전달해주었습니다. 이렇게 생성된 `slash` 객체는 `Rigidbody2D`가 부착되어 있습니다. 부착된 `Rigidbody2D`는 `BulletManager`에 의해 별도로 관리되므로 컴포넌트를 제거하지 마십시오. <br><br>주목할 것은 `b.lookAt`을 `Vector2` 타입의 레지스터 변수로 사용했다는 점과, `onUpdate`에 `b.DestroyThisBullet()`을 호출하지 않는다는 점입니다. 위에서도 언급했듯이, `b.lookAt` 을 레지스터 변수로 사용하는 것은 권장하지 않습니다. 누군가가 `slash.lookAt`을 방향벡터로 생각하고 수정할 수도 있기 때문입니다. 여기서는 편의를 위해 이렇게 해주었지만, 실제로는 `RegisterSet` 구조체를 수정해서 `Vector2 v1` 과 같은 레지스터 변수를 정의하거나, 벡터의 각 성분들을 `f1`, `f2` 에 따로 담아두는 것을 권장합니다.
+
+- `CreateCatchBall()` 메소드는 플레이어와 적이 주고받는 캐치볼을 생성합니다. `ball`은 `interval` 간격마다 `"Effect"`라는 애니메이션을 가진 잔상을 생성합니다. 조금 오버헤드가 있을 수 있지만, 잔상으로 사용된 `Bullet`은 금방 파괴되며 가까운 `BulletManager.CreateBullet()` 호출에서 높은 확률로 재사용되므로 편의성을 고려한 절충안으로 생각할 수 있습니다. <br><br>
 
 
 
+- `ShakeCamera()` 메소드는 카메라에 흔들림을 주는 총알을 생성합니다. `Coroutine`으로 구현할때와 다르게, 총알의 인스턴스는 계속 재사용되기 때문에 가비지 생성에 대한 부담이 줄어든다는 장점이 있습니다. 생성된 `cameraShaker` 총알은 시각적으로 보이거나 물체와 충돌하면 안되기 때문에, `cameraShaker.gameObject.layer = BulletManager.effectLayer` 처럼 이팩트용 총알로 만들어주었습니다. 특이한점으로는 `cameraShaker` 또한 `lookAt` 을 레지스터 변수로 사용했다는 것입니다. 여기서는 문제될 것이 없습니다. 해당 총알을 누군가가 참조하는 것도 아니며, 충돌하지도 않기 때문입니다.<br><br>
 
+- `ScaleTime()` 메소드는 일시적인 시간정지 효과를 부여합니다. 이를 위해 `Time.timeScale`을 수정합니다. 물론 이 효과가 영구적이면 안되기에, `timeScaler`라는 총알을 생성하여 일정수만큼 프레임이 지나면 `Time.timeScale = 1f` 처럼 값을 복구하도록 했습니다. 
