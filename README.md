@@ -514,6 +514,6 @@ public class Player : MonoBehaviour {
 
 - `ScaleTime()` 메소드는 일시적인 시간정지 효과를 부여합니다. 이를 위해 `Time.timeScale`을 수정합니다. 물론 이 효과가 영구적이면 안되기에, `timeScaler`라는 총알을 생성하여 일정수만큼 프레임이 지나면 `Time.timeScale = 1f` 처럼 값을 복구하도록 지능을 주었습니다.
 
-### 4. 마치며
+## 4. 마치며
 튜토리얼은 여기서 마칩니다. 나머지는 `documentation.html`을 읽어보시길 바랍니다. 또한 예제에서 사용한 스프라이트(sprites)들은 `example_resources.7zip`을 다운받으시면 됩니다.
 
